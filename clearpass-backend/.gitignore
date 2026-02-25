@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+node_modules/
+.env
+clearpass-backend/node_modules/
+clearpass-frontend/node_modules/
