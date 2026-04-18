@@ -1,19 +1,32 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./pages/Login";
-import StudentDashboard from "./pages/StudentDashboard";
-import TeacherDashboard from "./pages/TeacherDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
+import "./App.css";
+
+import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router-dom";
+
 import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
+import { ToastProvider } from "./context/ToastContext";
+import AdminDashboard from "./pages/AdminDashboard";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import StudentDashboard from "./pages/StudentDashboard";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import TeacherDashboard from "./pages/TeacherDashboard";
+import ProfilePage from "./pages/Profile";
+import SettingsPage from "./pages/Settings";
+import SubjectListPage from "./pages/SubjectListPage";
+import AcademicStructurePage from "./pages/AcademicStructurePage";
 
 function App() {
   return (
+    <ThemeProvider>
+    <AuthProvider>
+      <ToastProvider>
     <Router>
       <Routes>
-
-        {/* Public Route */}
-        <Route path="/" element={<Login />} />
-
-        {/* Student */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route
           path="/student"
           element={
@@ -22,8 +35,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* Teacher */}
         <Route
           path="/teacher"
           element={
@@ -32,8 +43,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* Admin */}
         <Route
           path="/admin"
           element={
@@ -42,9 +51,52 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/super-admin"
+          element={
+            <ProtectedRoute allowedRole="super_admin">
+              <SuperAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/super-admin/subjects"
+          element={
+            <ProtectedRoute allowedRole="super_admin">
+              <SubjectListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/super-admin/structure"
+          element={
+            <ProtectedRoute allowedRole="super_admin">
+              <AcademicStructurePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute allowedRole={["student","teacher","admin","super_admin"]}>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute allowedRole={["student","teacher","admin","super_admin"]}>
+              <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
+      </ToastProvider>
+    </AuthProvider>
+    </ThemeProvider>
   );
 }
 

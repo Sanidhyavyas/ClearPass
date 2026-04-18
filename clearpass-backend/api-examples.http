@@ -1,0 +1,70 @@
+@baseUrl = http://localhost:5000
+@token = paste_jwt_here
+
+### Register user
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "name": "Alice Student",
+  "email": "alice@student.com",
+  "password": "Password123!",
+  "role": "student"
+}
+
+### Login
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "alice@student.com",
+  "password": "Password123!"
+}
+
+### Get current user
+GET {{baseUrl}}/me
+Authorization: Bearer {{token}}
+
+### Get role-based dashboard summary
+GET {{baseUrl}}/dashboard
+Authorization: Bearer {{token}}
+
+### Student submits clearance request
+POST {{baseUrl}}/request-clearance
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "remarks": "Requesting academic clearance for this semester."
+}
+
+### Student views own requests
+GET {{baseUrl}}/my-requests
+Authorization: Bearer {{token}}
+
+### Teacher views assigned requests
+GET {{baseUrl}}/assigned-requests
+Authorization: Bearer {{token}}
+
+### Teacher updates request status
+PUT {{baseUrl}}/update-status/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "approved",
+  "remarks": "All requirements cleared."
+}
+
+### Admin views all requests
+GET {{baseUrl}}/all-requests
+Authorization: Bearer {{token}}
+
+### Admin assigns teacher to request
+PUT {{baseUrl}}/assign-teacher/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "assignedTeacherId": 2
+}

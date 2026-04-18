@@ -1,17 +1,18 @@
 import { Navigate } from "react-router-dom";
 
-function ProtectedRoute({ children, allowedRole }) {
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+import { getDefaultRoute, getRole, getToken } from "../utils/auth";
 
-  // Not logged in
+function ProtectedRoute({ children, allowedRole }) {
+  const token = getToken();
+  const role = getRole();
+
   if (!token) {
-    return <Navigate to="/" />;
+    return <Navigate to="/login" replace />;
   }
 
-  // Role mismatch
-  if (allowedRole && role !== allowedRole) {
-    return <Navigate to="/" />;
+  const allowed = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
+  if (allowedRole && !allowed.includes(role)) {
+    return <Navigate to={getDefaultRoute(role)} replace />;
   }
 
   return children;
