@@ -56,6 +56,17 @@ function EmptyState({ title, desc }) {
 
 const EMPTY_FORM = { name: "", email: "", password: "", role: "student", department: "", clearanceStatus: "incomplete" };
 
+// Defined at module scope to prevent unmount/remount on every re-render (focus loss bug)
+function Field({ label, id, children, error }) {
+  return (
+    <div>
+      <label htmlFor={id} className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
+      {children}
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
+
 function SuperAdminDashboard() {
   const [activeKey, setActiveKey] = useState("overview");
   const [superAdmin, setSuperAdmin] = useState(null);
@@ -174,14 +185,6 @@ function SuperAdminDashboard() {
       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
       Refresh
     </button>
-  );
-
-  const Field = ({ label, id, children, error }) => (
-    <div>
-      <label htmlFor={id} className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
-      {children}
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
-    </div>
   );
 
   const editF = editingUser?.form;

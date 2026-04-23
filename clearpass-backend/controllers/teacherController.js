@@ -174,6 +174,8 @@ const getRequestById = async (req, res, next) => {
 
 /**
  * POST /api/teacher/approve/:id
+ * Multi-stage flow: teacher → admin → completed (status=approved).
+ * Teachers advance from 'teacher' stage; admins advance from 'admin' stage.
  */
 const approveRequest = async (req, res, next) => {
   try {
@@ -181,28 +183,56 @@ const approveRequest = async (req, res, next) => {
     const { role, department: userDept, id: userId } = req.user;
 
     const [rows] = await db.query(
-      "SELECT id, status, department FROM clearance_requests WHERE id = ? LIMIT 1",
+      "SELECT id, status, department, current_stage FROM clearance_requests WHERE id = ? LIMIT 1",
       [id]
     );
     if (!rows.length) return res.status(404).json({ success: false, message: "Request not found" });
-    if (role === "teacher" && rows[0].department !== userDept) {
+
+    const request = rows[0];
+
+    if (role === "teacher" && request.department !== userDept) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
 
-    await db.query(
-      `UPDATE clearance_requests
-         SET status = 'approved', approved_at = NOW(), teacher_id = ?, updated_at = NOW()
-       WHERE id = ?`,
-      [userId, id]
-    );
+    // Determine next stage
+    const stage     = request.current_stage || "teacher";
+    const NEXT_STAGE = { teacher: "admin", hod: "admin", admin: "completed" };
+    const nextStage  = NEXT_STAGE[stage];
+
+    if (!nextStage) {
+      return res.status(400).json({ success: false, message: "Request is already completed." });
+    }
+
+    if (nextStage === "completed") {
+      // Final approval
+      await db.query(
+        `UPDATE clearance_requests
+           SET status = 'approved', current_stage = 'completed',
+               approved_at = NOW(), teacher_id = ?, updated_at = NOW()
+         WHERE id = ?`,
+        [userId, id]
+      );
+    } else {
+      // Advance to next stage
+      await db.query(
+        `UPDATE clearance_requests
+           SET current_stage = ?, teacher_id = ?, updated_at = NOW()
+         WHERE id = ?`,
+        [nextStage, userId, id]
+      );
+    }
 
     await db.query(
       `INSERT INTO clearance_audit_logs (request_id, action, performed_by, performed_by_role, remarks)
-       VALUES (?, 'approved', ?, ?, ?)`,
-      [id, userId, role, req.body.remarks || null]
+       VALUES (?, ?, ?, ?, ?)`,
+      [id, nextStage === "completed" ? "approved" : `approved_by_${role}`, userId, role, req.body.remarks || null]
     );
 
-    return res.json({ success: true, message: "Request approved" });
+    const message = nextStage === "completed"
+      ? "Request fully approved"
+      : `Request advanced to ${nextStage} stage`;
+
+    return res.json({ success: true, message });
   } catch (error) {
     return next(error);
   }

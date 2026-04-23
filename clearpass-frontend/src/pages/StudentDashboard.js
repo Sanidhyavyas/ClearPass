@@ -28,8 +28,9 @@ const TIMELINE_DOT = {
 };
 
 const navItems = [
-  { key: "overview", label: "Overview", caption: "Your clearance status" },
-  { key: "history",  label: "History",  caption: "Application timeline"   },
+  { key: "overview",   label: "Overview",   caption: "Your clearance status" },
+  { key: "documents",  label: "Documents",  caption: "Upload supporting files" },
+  { key: "history",    label: "History",    caption: "Application timeline"   },
 ];
 
 function StatusPill({ status }) {
@@ -75,8 +76,12 @@ export default function StudentDashboard() {
 
   const [activeKey, setActiveKey] = useState("overview");
   const [loading, setLoading]     = useState(true);
-  const [status, setStatus]       = useState(null);   // { request, modules, overall_progress, status_label }
+  const [status, setStatus]       = useState(null);
   const [history, setHistory]     = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const fileInputRef = useRef(null);
   const prevStatusRef = useRef(null);
 
   const loadStatus = useCallback(async () => {
@@ -94,14 +99,21 @@ export default function StudentDashboard() {
     } catch { /* silent */ }
   }, []);
 
+  const loadDocuments = useCallback(async () => {
+    try {
+      const res = await API.get("/api/upload/documents");
+      setDocuments(res.data.documents || []);
+    } catch { /* silent */ }
+  }, []);
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([loadStatus(), loadHistory()]);
+      await Promise.all([loadStatus(), loadHistory(), loadDocuments()]);
       setLoading(false);
     };
     init();
-  }, [loadStatus, loadHistory]);
+  }, [loadStatus, loadHistory, loadDocuments]);
 
   // Poll every 15s for status changes and toast if something changed
   useEffect(() => {
@@ -139,6 +151,44 @@ export default function StudentDashboard() {
     if (!d) return "—";
     try { return new Date(d).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
     catch { return "—"; }
+  };
+
+  const formatBytes = (bytes) => {
+    if (!bytes) return "—";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFiles.length) return;
+    const data = new FormData();
+    selectedFiles.forEach((f) => data.append("files", f));
+    try {
+      setUploading(true);
+      await API.post("/api/upload/documents", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      addToast(`${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} uploaded.`, "success");
+      setSelectedFiles([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      loadDocuments();
+    } catch (err) {
+      addToast(err.response?.data?.message || "Upload failed.", "error");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteDoc = async (docId, fileName) => {
+    if (!window.confirm(`Delete "${fileName}"?`)) return;
+    try {
+      await API.delete(`/api/upload/documents/${docId}`);
+      addToast("Document deleted.", "info");
+      setDocuments((prev) => prev.filter((d) => d.id !== docId));
+    } catch (err) {
+      addToast(err.response?.data?.message || "Failed to delete.", "error");
+    }
   };
 
   const MODULE_NAMES = ["library", "accounts", "hostel", "department"];
@@ -203,6 +253,62 @@ export default function StudentDashboard() {
                     </span>
                   )}
                 </div>
+
+                {/* Approval stage stepper */}
+                {status?.request && (() => {
+                  const STAGES = [
+                    { key: "teacher", label: "Teacher" },
+                    { key: "admin",   label: "Admin"   },
+                    { key: "completed", label: "Completed" },
+                  ];
+                  const reqStage   = status.request.current_stage || "teacher";
+                  const reqStatus  = status.request.status;
+                  const activeIdx  = STAGES.findIndex((s) => s.key === reqStage);
+                  const isRejected = reqStatus === "rejected";
+
+                  return (
+                    <div className="mt-5 pt-5 border-t border-gray-100">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Approval pipeline</p>
+                      <ol className="flex items-center gap-0">
+                        {STAGES.map((stage, idx) => {
+                          const isDone    = !isRejected && idx < activeIdx;
+                          const isCurrent = idx === activeIdx;
+                          const isLast    = idx === STAGES.length - 1;
+
+                          const circleClass = isDone
+                            ? "bg-green-500 text-white border-green-500"
+                            : isCurrent && isRejected
+                            ? "bg-red-500 text-white border-red-500"
+                            : isCurrent
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-400 border-gray-200";
+
+                          const labelClass = isDone
+                            ? "text-green-700 font-semibold"
+                            : isCurrent && isRejected
+                            ? "text-red-600 font-semibold"
+                            : isCurrent
+                            ? "text-blue-700 font-semibold"
+                            : "text-gray-400";
+
+                          return (
+                            <li key={stage.key} className={`flex items-center ${!isLast ? "flex-1" : ""}`}>
+                              <div className="flex flex-col items-center">
+                                <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold ${circleClass}`}>
+                                  {isDone ? "✓" : idx + 1}
+                                </div>
+                                <span className={`text-xs mt-1 whitespace-nowrap ${labelClass}`}>{stage.label}</span>
+                              </div>
+                              {!isLast && (
+                                <div className={`flex-1 h-0.5 mx-1 mb-4 ${isDone ? "bg-green-400" : "bg-gray-200"}`} />
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Module Cards 2×2 Grid */}
@@ -214,6 +320,105 @@ export default function StudentDashboard() {
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ── DOCUMENTS ──────────────────────────────────────────── */}
+          {activeKey === "documents" && (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Documents</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Upload your ID card, fee receipt, and other supporting files (JPEG, PNG, PDF — max 5 MB each).</p>
+              </div>
+
+              {/* Upload area */}
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-4">
+                <div
+                  className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const files = Array.from(e.dataTransfer.files).slice(0, 5);
+                    setSelectedFiles(files);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-10 w-10 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <p className="text-sm text-gray-500">
+                    {selectedFiles.length > 0
+                      ? `${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected`
+                      : "Drag & drop or click to select files"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">Up to 5 files, 5 MB each</p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".jpg,.jpeg,.png,.webp,.pdf"
+                    className="hidden"
+                    onChange={(e) => setSelectedFiles(Array.from(e.target.files))}
+                  />
+                </div>
+
+                {selectedFiles.length > 0 && (
+                  <ul className="text-sm space-y-1">
+                    {selectedFiles.map((f, i) => (
+                      <li key={i} className="flex items-center justify-between text-gray-700">
+                        <span className="truncate">{f.name}</span>
+                        <span className="text-xs text-gray-400 ml-2 shrink-0">{formatBytes(f.size)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <button
+                  type="button"
+                  disabled={!selectedFiles.length || uploading}
+                  onClick={handleUpload}
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
+                >
+                  {uploading ? "Uploading…" : "Upload Files"}
+                </button>
+              </div>
+
+              {/* Uploaded files list */}
+              {documents.length === 0 ? (
+                <div className="bg-white rounded-xl border border-gray-100 py-12 text-center shadow-sm">
+                  <p className="text-sm text-gray-400">No documents uploaded yet.</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-gray-100 bg-gray-50">
+                      <tr>
+                        {["File Name", "Size", "Uploaded", ""].map((h) => (
+                          <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {documents.map((doc) => (
+                        <tr key={doc.id} className="hover:bg-gray-50/60">
+                          <td className="px-4 py-3 font-medium text-gray-800 truncate max-w-[180px]">{doc.file_name}</td>
+                          <td className="px-4 py-3 text-gray-500">{formatBytes(doc.file_size)}</td>
+                          <td className="px-4 py-3 text-gray-400">{formatDate(doc.uploaded_at)}</td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDoc(doc.id, doc.file_name)}
+                              className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 

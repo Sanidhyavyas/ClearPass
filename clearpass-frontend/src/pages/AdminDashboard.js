@@ -107,8 +107,10 @@ function AdminDashboard() {
     finally { setAuditLoading(false); }
   };
 
-  useEffect(() => { loadData(); /* eslint-disable-next-line */ }, []);
-  useEffect(() => { if (activeKey === "audit" && auditLogs.length === 0) loadAuditLogs(); /* eslint-disable-next-line */ }, [activeKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (activeKey === "audit" && auditLogs.length === 0) loadAuditLogs(); }, [activeKey]);
 
   const handleAssignTeacher = async (requestId) => {
     const teacherId = assignmentMap[requestId];
@@ -274,19 +276,31 @@ function AdminDashboard() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm" aria-label="Requests table">
-                      <THead cols={["Student", "Status", "Assigned Teacher", "Date"]} />
+                      <THead cols={["Student", "Status", "Stage", "Assigned Teacher", "Date"]} />
                       <tbody className="divide-y divide-slate-100">
-                        {filteredRequests.map((r) => (
+                        {filteredRequests.map((r) => {
+                          const STAGE_LABELS = { teacher: "With Teacher", hod: "With HOD", admin: "With Admin", completed: "Completed" };
+                          const stageLabel = STAGE_LABELS[r.current_stage] || r.current_stage || "—";
+                          const stageClass =
+                            r.current_stage === "completed" ? "bg-green-100 text-green-700" :
+                            r.current_stage === "admin"     ? "bg-purple-100 text-purple-700" :
+                            r.current_stage === "hod"       ? "bg-orange-100 text-orange-700" :
+                                                               "bg-blue-100 text-blue-700";
+                          return (
                           <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
                             <td className="px-4 py-3">
                               <p className="font-medium text-slate-800">{r.student_name}</p>
                               <p className="text-xs text-slate-400">{r.student_email}</p>
                             </td>
                             <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                            <td className="px-4 py-3">
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${stageClass}`}>{stageLabel}</span>
+                            </td>
                             <td className="px-4 py-3 text-slate-600">{r.assigned_teacher_name || <span className="text-slate-400">—</span>}</td>
                             <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

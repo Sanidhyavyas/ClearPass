@@ -10,6 +10,7 @@ const superAdminRoutes = require("./routes/superAdminRoutes");
 const subjectRoutes    = require("./routes/subjectRoutes");
 const teacherRoutes    = require("./routes/teacherRoutes");
 const studentRoutes    = require("./routes/studentRoutes");
+const uploadRoutes     = require("./routes/uploadRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,6 +42,7 @@ app.use("/api/super-admin", superAdminRoutes);
 app.use("/api/admin/subjects", subjectRoutes);
 app.use("/api/teacher", teacherRoutes);
 app.use("/api/student", studentRoutes);
+app.use("/api/upload",  uploadRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
