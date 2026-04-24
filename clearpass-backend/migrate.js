@@ -118,6 +118,49 @@ async function run() {
   await createIndexIfMissing("idx_cal_request","clearance_audit_logs","request_id");
   await createIndexIfMissing("idx_rd_request", "request_documents",   "request_id");
 
+  // ── qr_tokens ────────────────────────────────────────────────────
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS qr_tokens (
+        id                INT PRIMARY KEY AUTO_INCREMENT,
+        token             VARCHAR(64)  NOT NULL UNIQUE,
+        request_id        INT          NOT NULL,
+        student_id        INT          NOT NULL,
+        certificate_path  VARCHAR(500) NULL,
+        created_at        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_qr_request FOREIGN KEY (request_id) REFERENCES clearance_requests(id) ON DELETE CASCADE,
+        CONSTRAINT fk_qr_student FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+    console.log("✓ table qr_tokens");
+  } catch (err) {
+    if (err.code === "ER_TABLE_EXISTS_ERROR") console.log("– (exists) table qr_tokens");
+    else console.error("✗ table qr_tokens:", err.message);
+  }
+
+  // ── module_assignments ───────────────────────────────────────────
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS module_assignments (
+        module_name      ENUM('library','accounts','hostel','department') PRIMARY KEY,
+        assigned_user_id INT  NULL,
+        updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT fk_ma_user FOREIGN KEY (assigned_user_id) REFERENCES users(id) ON DELETE SET NULL
+      )
+    `);
+    await db.query(`
+      INSERT IGNORE INTO module_assignments (module_name) VALUES
+        ('library'), ('accounts'), ('hostel'), ('department')
+    `);
+    console.log("✓ table module_assignments");
+  } catch (err) {
+    if (err.code === "ER_TABLE_EXISTS_ERROR") console.log("– (exists) table module_assignments");
+    else console.error("✗ table module_assignments:", err.message);
+  }
+
+  await createIndexIfMissing("idx_qr_token",       "qr_tokens", "token");
+  await createIndexIfMissing("idx_qr_request_id",  "qr_tokens", "request_id");
+
   console.log("\nMigration complete.");
   process.exit(0);
 }

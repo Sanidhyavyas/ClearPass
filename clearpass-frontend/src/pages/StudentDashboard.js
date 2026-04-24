@@ -320,6 +320,37 @@ export default function StudentDashboard() {
                   ))}
                 </div>
               </div>
+
+              {/* Certificate download — visible only when fully approved */}
+              {status?.request?.status === "approved" && status?.request?.current_stage === "completed" && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-5 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-green-800">Clearance Certificate Ready</p>
+                    <p className="text-xs text-green-600 mt-0.5">Your clearance has been fully approved. Download your official PDF certificate.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const res = await API.get(`/api/clearance/${status.request.id}/certificate`, { responseType: "blob" });
+                        const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = "clearance_certificate.pdf";
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      } catch {
+                        addToast("Could not download certificate. Please try again.", "error");
+                      }
+                    }}
+                    className="shrink-0 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                  >
+                    ↓ Download PDF
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

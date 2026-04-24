@@ -93,3 +93,73 @@ export function UserPieChart({ students = 0, teachers = 0, admins = 0 }) {
     </div>
   );
 }
+
+/**
+ * ModuleBarChart — stacked bar of approved/pending/rejected per module.
+ * Props: moduleStats = [{ module_name, approved, pending, rejected }]
+ */
+export function ModuleBarChart({ moduleStats = [] }) {
+  const data = moduleStats.map((m) => ({
+    name:     m.module_name.charAt(0).toUpperCase() + m.module_name.slice(1),
+    Approved: m.approved,
+    Pending:  m.pending,
+    Rejected: m.rejected,
+  }));
+
+  if (!data.length) return null;
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-5">
+      <h3 className="text-sm font-semibold text-slate-700 mb-4">Module-wise Clearance Status</h3>
+      <ResponsiveContainer width="100%" height={220}>
+        <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+          <Tooltip
+            contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", boxShadow: "0 1px 6px rgba(0,0,0,0.08)", fontSize: "12px" }}
+            cursor={{ fill: "rgba(0,0,0,0.03)" }}
+          />
+          <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: "11px", color: "#64748b" }}>{v}</span>} />
+          <Bar dataKey="Approved" stackId="a" fill={COLORS.approved} radius={[0, 0, 0, 0]} />
+          <Bar dataKey="Pending"  stackId="a" fill={COLORS.pending}  radius={[0, 0, 0, 0]} />
+          <Bar dataKey="Rejected" stackId="a" fill={COLORS.rejected} radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/**
+ * ModuleAvgChart — bar chart of avg approval hours per module.
+ * Props: moduleStats = [{ module_name, avg_hours_to_approve }]
+ */
+export function ModuleAvgChart({ moduleStats = [] }) {
+  const data = moduleStats
+    .filter((m) => m.avg_hours_to_approve > 0)
+    .map((m) => ({
+      name: m.module_name.charAt(0).toUpperCase() + m.module_name.slice(1),
+      "Avg Hours": m.avg_hours_to_approve,
+    }));
+
+  if (!data.length) return null;
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-5">
+      <h3 className="text-sm font-semibold text-slate-700 mb-4">Avg Approval Time (hours)</h3>
+      <ResponsiveContainer width="100%" height={220}>
+        <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+          <Tooltip
+            formatter={(v) => [`${v}h`, "Avg Hours"]}
+            contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", boxShadow: "0 1px 6px rgba(0,0,0,0.08)", fontSize: "12px" }}
+            cursor={{ fill: "rgba(0,0,0,0.03)" }}
+          />
+          <Bar dataKey="Avg Hours" fill="#6366f1" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}

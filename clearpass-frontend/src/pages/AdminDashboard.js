@@ -1,7 +1,7 @@
 // --- ADMIN DASHBOARD ---
 import { useEffect, useState } from "react";
 
-import { StatusBarChart, UserPieChart } from "../components/ChartCard";
+import { ModuleAvgChart, ModuleBarChart, StatusBarChart, UserPieChart } from "../components/ChartCard";
 import DashboardLayout from "../components/DashboardLayout";
 import { SkeletonCard, SkeletonTableRows } from "../components/LoadingSkeleton";
 import StatusBadge from "../components/StatusBadge";
@@ -9,11 +9,13 @@ import { useToast } from "../context/ToastContext";
 import API from "../services/api";
 
 const navItems = [
-  { key: "overview",  label: "Overview",         caption: "System-wide request and user stats"     },
-  { key: "users",     label: "Users",             caption: "Browse all registered accounts"          },
-  { key: "requests",  label: "All Requests",      caption: "Filter and monitor every request"        },
-  { key: "assign",    label: "Assign Teachers",   caption: "Route requests to available teachers"    },
-  { key: "audit",     label: "Audit Log",         caption: "Track all approval and assignment actions" },
+  { key: "overview",   label: "Overview",        caption: "System-wide request and user stats"       },
+  { key: "analytics", label: "Analytics",       caption: "Module stats and approval time charts"    },
+  { key: "finalize",  label: "Finalize Queue",  caption: "Requests awaiting final admin approval"   },
+  { key: "users",     label: "Users",           caption: "Browse all registered accounts"           },
+  { key: "requests",  label: "All Requests",    caption: "Filter and monitor every request"         },
+  { key: "assign",    label: "Assign Teachers", caption: "Route requests to available teachers"     },
+  { key: "audit",     label: "Audit Log",       caption: "Track all approval and assignment actions" },
 ];
 
 const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150";
@@ -62,6 +64,11 @@ function AdminDashboard() {
   const [requests, setRequests] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [pendingFinal, setPendingFinal] = useState([]);
+  const [finalizing, setFinalizing] = useState(null);
+  const [finalRemarks, setFinalRemarks] = useState({});
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -107,10 +114,45 @@ function AdminDashboard() {
     finally { setAuditLoading(false); }
   };
 
+  const loadAnalytics = async () => {
+    try {
+      setAnalyticsLoading(true);
+      const res = await API.get("/api/analytics/overview");
+      setAnalytics(res.data);
+    } catch { addToast("Could not load analytics.", "warning"); }
+    finally { setAnalyticsLoading(false); }
+  };
+
+  const loadPendingFinal = async () => {
+    try {
+      const res = await API.get("/api/clearance/pending-final");
+      setPendingFinal(res.data.data || []);
+    } catch { addToast("Could not load finalize queue.", "warning"); }
+  };
+
+  const handleFinalize = async (requestId, status) => {
+    const remarks = finalRemarks[requestId] || "";
+    if (status === "rejected" && !remarks.trim()) {
+      addToast("Please provide a rejection reason.", "warning"); return;
+    }
+    try {
+      setFinalizing(requestId);
+      await API.patch(`/api/clearance/${requestId}/finalize`, { status, remarks });
+      addToast(status === "approved" ? "Certificate issued and email sent." : "Request rejected.", status === "approved" ? "success" : "info");
+      await loadPendingFinal();
+    } catch (err) {
+      addToast(err.response?.data?.message || "Finalize failed.", "error");
+    } finally { setFinalizing(null); }
+  };
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadData(); }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (activeKey === "audit" && auditLogs.length === 0) loadAuditLogs(); }, [activeKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (activeKey === "analytics" && !analytics) loadAnalytics(); }, [activeKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (activeKey === "finalize") loadPendingFinal(); }, [activeKey]);
 
   const handleAssignTeacher = async (requestId) => {
     const teacherId = assignmentMap[requestId];
@@ -201,6 +243,114 @@ function AdminDashboard() {
                 <StatusBarChart pending={pendingReqs} approved={approvedReqs} rejected={rejectedReqs} />
                 <UserPieChart students={totalStudents} teachers={totalTeachers} admins={totalAdmins} />
               </div>
+            </div>
+          )}
+
+          {/* ANALYTICS */}
+          {activeKey === "analytics" && (
+            <div className="space-y-6">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 text-white">
+                <h1 className="text-2xl font-bold">Analytics</h1>
+                <p className="text-indigo-100 text-sm mt-1">Module-wise clearance metrics and approval time.</p>
+              </div>
+              {analyticsLoading ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">{[1,2,3,4].map((i) => <SkeletonCard key={i} />)}</div>
+              ) : analytics ? (
+                <>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard label="Total Students"  value={analytics.total_students}  color="blue"  icon="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    <StatCard label="Total Requests"  value={analytics.total_requests}  icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <StatCard label="Approved"        value={analytics.approved_count}  color="green" icon="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <StatCard label="Pending / Rejected" value={`${analytics.pending_count} / ${analytics.rejected_count}`} color="amber" icon="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <ModuleBarChart moduleStats={analytics.module_stats || []} />
+                    <ModuleAvgChart moduleStats={analytics.module_stats || []} />
+                  </div>
+                  {/* Recent audit log entries */}
+                  {(analytics.recent_audit || []).length > 0 && (
+                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                      <div className="px-5 py-3 border-b border-slate-100">
+                        <h3 className="text-sm font-semibold text-slate-700">Recent System Activity</h3>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <THead cols={["Action", "Performed By", "Details", "Date"]} />
+                          <tbody className="divide-y divide-slate-100">
+                            {(analytics.recent_audit || []).map((log, i) => (
+                              <tr key={log.id ?? i} className="hover:bg-slate-50/60">
+                                <td className="px-4 py-3"><span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-700">{log.action}</span></td>
+                                <td className="px-4 py-3 text-slate-600">{log.user_name_display || log.user_name || "—"}</td>
+                                <td className="px-4 py-3 text-slate-500 max-w-xs truncate">{log.details || "—"}</td>
+                                <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{log.created_at ? new Date(log.created_at).toLocaleString() : "—"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <EmptyState title="No analytics data" desc="Submit and process some requests to see stats." />
+              )}
+            </div>
+          )}
+
+          {/* FINALIZE QUEUE */}
+          {activeKey === "finalize" && (
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 text-white">
+                <h1 className="text-2xl font-bold">Final Approval Queue</h1>
+                <p className="text-purple-100 text-sm mt-1">{pendingFinal.length} request{pendingFinal.length !== 1 ? "s" : ""} awaiting your final decision.</p>
+              </div>
+              {pendingFinal.length === 0 ? (
+                <div className="bg-white rounded-xl border border-slate-200">
+                  <EmptyState title="Queue is empty" desc="All requests have been finalized." />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendingFinal.map((r) => (
+                    <div key={r.id} className="bg-white rounded-xl border border-slate-200 p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="font-semibold text-slate-800">{r.student_name}</p>
+                          <p className="text-xs text-slate-500">{r.student_email} · {r.department || "—"} · {r.roll_number || "—"}</p>
+                          <p className="text-xs text-slate-400 mt-1">Submitted {r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : "—"}</p>
+                        </div>
+                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-purple-100 text-purple-700 shrink-0">Ready to Finalize</span>
+                      </div>
+                      <div className="mt-4">
+                        <textarea
+                          value={finalRemarks[r.id] || ""}
+                          onChange={(e) => setFinalRemarks((m) => ({ ...m, [r.id]: e.target.value }))}
+                          placeholder="Remarks / rejection reason (required for rejection)…"
+                          rows={2}
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          type="button"
+                          onClick={() => handleFinalize(r.id, "approved")}
+                          disabled={finalizing === r.id}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                        >
+                          {finalizing === r.id ? "Processing…" : "✓ Approve & Issue Certificate"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleFinalize(r.id, "rejected")}
+                          disabled={finalizing === r.id}
+                          className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-sm font-semibold rounded-lg transition-colors"
+                        >
+                          ✕ Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

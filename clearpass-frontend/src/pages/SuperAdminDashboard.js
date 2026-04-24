@@ -8,9 +8,10 @@ import { useToast } from "../context/ToastContext";
 import API from "../services/api";
 
 const navItems = [
-  { key: "overview", label: "Overview", caption: "Platform-wide metrics"        },
-  { key: "create",   label: "Create User", caption: "Add a new account"         },
-  { key: "manage",   label: "Manage Users", caption: "Edit or remove accounts"  },
+  { key: "overview", label: "Overview",          caption: "Platform-wide metrics"           },
+  { key: "create",   label: "Create User",       caption: "Add a new account"               },
+  { key: "manage",   label: "Manage Users",      caption: "Edit or remove accounts"         },
+  { key: "modules",  label: "Module Assignments",caption: "Assign staff to clearance modules" },
 ];
 
 const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-150";
@@ -81,6 +82,10 @@ function SuperAdminDashboard() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [assignments, setAssignments] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [savingModule, setSavingModule] = useState(null);
+  const [moduleSelections, setModuleSelections] = useState({});
   const { addToast } = useToast();
 
   const loadData = async () => {
@@ -102,6 +107,36 @@ function SuperAdminDashboard() {
   };
 
   useEffect(() => { loadData(); /* eslint-disable-next-line */ }, []);
+  useEffect(() => {
+    if (activeKey !== "modules") return;
+    const load = async () => {
+      try {
+        const [aRes, sRes] = await Promise.all([API.get("/api/modules/assignments"), API.get("/api/modules/staff")]);
+        const a = aRes.data.data || [];
+        setAssignments(a);
+        setStaff(sRes.data.data || []);
+        const sel = {};
+        a.forEach((m) => { sel[m.module_name] = m.assigned_user_id || ""; });
+        setModuleSelections(sel);
+      } catch { addToast("Could not load module assignments.", "warning"); }
+    };
+    load();
+    // eslint-disable-next-line
+  }, [activeKey]);
+
+  const handleSaveModule = async (moduleName) => {
+    try {
+      setSavingModule(moduleName);
+      const assigned_user_id = moduleSelections[moduleName] || null;
+      await API.put(`/api/modules/assignments/${moduleName}`, { assigned_user_id });
+      addToast(`${moduleName} assignment saved.`, "success");
+      setAssignments((prev) =>
+        prev.map((m) => m.module_name === moduleName ? { ...m, assigned_user_id } : m)
+      );
+    } catch (err) {
+      addToast(err.response?.data?.message || "Save failed.", "error");
+    } finally { setSavingModule(null); }
+  };
 
   const validateForm = (f) => {
     const e = {};
@@ -359,6 +394,62 @@ function SuperAdminDashboard() {
                   setEditF,
                   "Save Changes",
                   () => { setEditingUser(null); setFormErrors({}); }
+                )}
+              </div>
+            )}
+
+            {/* MODULE ASSIGNMENTS */}
+            {activeKey === "modules" && (
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl p-6 text-white">
+                  <h1 className="text-2xl font-bold">Module Assignments</h1>
+                  <p className="text-violet-100 text-sm mt-1">Assign staff members to handle each clearance module.</p>
+                </div>
+
+                {assignments.length === 0 ? (
+                  <EmptyState title="No modules found" desc="Module data could not be loaded." />
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {assignments.map((mod) => {
+                      const MODULE_LABELS = { library: "Library", accounts: "Accounts", hostel: "Hostel", department: "Department" };
+                      const label = MODULE_LABELS[mod.module_name] || mod.module_name.charAt(0).toUpperCase() + mod.module_name.slice(1);
+                      const currentSelection = moduleSelections[mod.module_name] ?? "";
+                      const currentStaff = staff.find((s) => String(s.id) === String(currentSelection));
+                      return (
+                        <div key={mod.module_name} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">{label}</p>
+                            {currentStaff ? (
+                              <p className="text-xs text-slate-500 mt-0.5">Currently: {currentStaff.name} ({currentStaff.email})</p>
+                            ) : (
+                              <p className="text-xs text-slate-400 mt-0.5">No one assigned</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <select
+                              value={currentSelection}
+                              onChange={(e) => setModuleSelections((m) => ({ ...m, [mod.module_name]: e.target.value }))}
+                              className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              aria-label={`Assign staff to ${label}`}
+                            >
+                              <option value="">— Unassigned —</option>
+                              {staff.map((s) => (
+                                <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => handleSaveModule(mod.module_name)}
+                              disabled={savingModule === mod.module_name}
+                              className="px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors shrink-0"
+                            >
+                              {savingModule === mod.module_name ? "Saving…" : "Save"}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
