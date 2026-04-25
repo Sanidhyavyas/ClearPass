@@ -10,17 +10,17 @@ const getClearanceStatus = async (req, res, next) => {
   try {
     const studentId = req.user.id;
 
-    const [requests] = await db.query(
+    const { rows: requests } = await db.query(
       `SELECT *, COALESCE(submitted_at, created_at) AS submitted_at
        FROM clearance_requests
-       WHERE student_id = ?
+       WHERE student_id = $1
        ORDER BY COALESCE(submitted_at, created_at) DESC
        LIMIT 1`,
       [studentId]
     );
 
-    const [modules] = await db.query(
-      "SELECT * FROM clearance_modules WHERE student_id = ? ORDER BY module_name",
+    const { rows: modules } = await db.query(
+      "SELECT * FROM clearance_modules WHERE student_id = $1 ORDER BY module_name",
       [studentId]
     );
 
@@ -60,8 +60,8 @@ const getClearanceHistory = async (req, res, next) => {
   try {
     const studentId = req.user.id;
 
-    const [requestRows] = await db.query(
-      "SELECT id FROM clearance_requests WHERE student_id = ?",
+    const { rows: requestRows } = await db.query(
+      "SELECT id FROM clearance_requests WHERE student_id = $1",
       [studentId]
     );
 
@@ -69,16 +69,15 @@ const getClearanceHistory = async (req, res, next) => {
       return res.json({ success: true, data: [], message: "No history" });
     }
 
-    const ids          = requestRows.map((r) => r.id);
-    const placeholders = ids.map(() => "?").join(",");
+    const ids = requestRows.map((r) => r.id);
 
-    const [history] = await db.query(
+    const { rows: history } = await db.query(
       `SELECT cal.*, u.name AS performer_name, u.role AS performer_role
        FROM clearance_audit_logs cal
        LEFT JOIN users u ON u.id = cal.performed_by
-       WHERE cal.request_id IN (${placeholders})
+       WHERE cal.request_id = ANY($1)
        ORDER BY cal.timestamp DESC`,
-      ids
+      [ids]
     );
 
     return res.json({ success: true, data: history, message: "History fetched" });
@@ -95,8 +94,8 @@ const getClearanceModules = async (req, res, next) => {
   try {
     const studentId = req.user.id;
 
-    const [modules] = await db.query(
-      "SELECT * FROM clearance_modules WHERE student_id = ? ORDER BY module_name",
+    const { rows: modules } = await db.query(
+      "SELECT * FROM clearance_modules WHERE student_id = $1 ORDER BY module_name",
       [studentId]
     );
 
@@ -113,4 +112,29 @@ const getClearanceModules = async (req, res, next) => {
   }
 };
 
-module.exports = { getClearanceStatus, getClearanceHistory, getClearanceModules };
+/**
+ * GET /api/student/profile
+ * Returns student_code, tgc, name, email for the logged-in student.
+ * ADDED
+ */
+const getProfile = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { rows } = await db.query(
+      `SELECT u.name, u.email, s.student_code, s.tgc
+       FROM users u
+       JOIN students s ON s.user_id = u.id
+       WHERE u.id = $1
+       LIMIT 1`,
+      [userId]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ success: false, message: "Student profile not found" });
+    }
+    return res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+module.exports = { getClearanceStatus, getClearanceHistory, getClearanceModules, getProfile };

@@ -16,9 +16,9 @@ const uploadDocuments = async (req, res, next) => {
     const studentId = req.user.id;
 
     // Fetch the student's latest pending request
-    const [requests] = await db.query(
+    const { rows: requests } = await db.query(
       `SELECT id FROM clearance_requests
-       WHERE student_id = ? AND status = 'pending'
+       WHERE student_id = $1 AND status = 'pending'
        ORDER BY COALESCE(submitted_at, created_at) DESC
        LIMIT 1`,
       [studentId]
@@ -34,36 +34,22 @@ const uploadDocuments = async (req, res, next) => {
 
     const requestId = requests[0].id;
 
-    // Ensure the table exists (graceful degradation)
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS request_documents (
-        id          INT PRIMARY KEY AUTO_INCREMENT,
-        request_id  INT          NOT NULL,
-        student_id  INT          NOT NULL,
-        file_name   VARCHAR(255) NOT NULL,
-        file_path   VARCHAR(500) NOT NULL,
-        file_type   VARCHAR(100) NULL,
-        file_size   INT          NULL,
-        uploaded_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT fk_rd_req FOREIGN KEY (request_id) REFERENCES clearance_requests(id) ON DELETE CASCADE,
-        CONSTRAINT fk_rd_stu FOREIGN KEY (student_id)  REFERENCES users(id)              ON DELETE CASCADE
-      )
-    `).catch(() => {}); // table may already exist
-
-    const rows = req.files.map((f) => [
+    const fileRows = req.files.map((f) => [
       requestId,
       studentId,
       f.originalname,
-      f.filename,      // stored filename (sanitized + timestamped)
+      f.filename,
       f.mimetype,
       f.size,
     ]);
 
-    await db.query(
-      `INSERT INTO request_documents (request_id, student_id, file_name, file_path, file_type, file_size)
-       VALUES ?`,
-      [rows]
-    );
+    for (const row of fileRows) {
+      await db.query(
+        `INSERT INTO request_documents (request_id, student_id, file_name, file_path, file_type, file_size)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        row
+      );
+    }
 
     const saved = req.files.map((f) => ({
       fileName: f.originalname,
@@ -97,18 +83,18 @@ const getDocuments = async (req, res, next) => {
 
     let docs = [];
     try {
-      const [rows] = await db.query(
+      const { rows } = await db.query(
         `SELECT rd.id, rd.file_name, rd.file_path, rd.file_type, rd.file_size, rd.uploaded_at,
                 cr.id AS request_id, cr.status AS request_status
          FROM request_documents rd
          LEFT JOIN clearance_requests cr ON cr.id = rd.request_id
-         WHERE rd.student_id = ?
+         WHERE rd.student_id = $1
          ORDER BY rd.uploaded_at DESC`,
         [studentId]
       );
       docs = rows;
     } catch (err) {
-      if (err.code !== "ER_NO_SUCH_TABLE") throw err;
+      if (err.code !== "42P01") throw err;
     }
 
     return res.json({ documents: docs });
@@ -126,8 +112,8 @@ const deleteDocument = async (req, res, next) => {
     const studentId = req.user.id;
     const docId     = req.params.id;
 
-    const [rows] = await db.query(
-      "SELECT * FROM request_documents WHERE id = ? AND student_id = ? LIMIT 1",
+    const { rows } = await db.query(
+      "SELECT * FROM request_documents WHERE id = $1 AND student_id = $2 LIMIT 1",
       [docId, studentId]
     );
 
@@ -138,7 +124,7 @@ const deleteDocument = async (req, res, next) => {
     const doc      = rows[0];
     const filePath = path.join(__dirname, "..", "uploads", doc.file_path);
 
-    await db.query("DELETE FROM request_documents WHERE id = ?", [docId]);
+    await db.query("DELETE FROM request_documents WHERE id = $1", [docId]);
 
     // Best-effort file removal
     try { fs.unlinkSync(filePath); } catch { /* already gone */ }
