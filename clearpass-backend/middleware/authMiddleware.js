@@ -3,21 +3,30 @@ const jwt = require("jsonwebtoken");
 const db = require("../db");
 
 const verifyToken = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({
+      message: "Authorization token is required"
+    });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  // Verify JWT separately so DB errors are not masked as token errors.
+  let decoded;
   try {
-    const authHeader = req.headers.authorization;
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    return res.status(401).json({
+      message: "Invalid or expired token"
+    });
+  }
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        message: "Authorization token is required"
-      });
-    }
-
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
+  try {
     if (decoded.authSource === "super_admins") {
-      const [superAdmins] = await db.query(
-        "SELECT id, name, email FROM super_admins WHERE id = ? LIMIT 1",
+      const { rows: superAdmins } = await db.query(
+        "SELECT id, name, email FROM super_admins WHERE id = $1 LIMIT 1",
         [decoded.id]
       );
 
@@ -39,15 +48,17 @@ const verifyToken = async (req, res, next) => {
     // Fall back to basic columns so auth still works before migration is run.
     let users;
     try {
-      [users] = await db.query(
-        "SELECT id, name, email, role, department, roll_number FROM users WHERE id = ? LIMIT 1",
+      const { rows } = await db.query(
+        "SELECT id, name, email, role, department, roll_number FROM users WHERE id = $1 LIMIT 1",
         [decoded.id]
       );
+      users = rows;
     } catch {
-      [users] = await db.query(
-        "SELECT id, name, email, role FROM users WHERE id = ? LIMIT 1",
+      const { rows } = await db.query(
+        "SELECT id, name, email, role FROM users WHERE id = $1 LIMIT 1",
         [decoded.id]
       );
+      users = rows;
     }
 
     if (users.length === 0) {
@@ -59,9 +70,8 @@ const verifyToken = async (req, res, next) => {
     req.user = users[0];
     return next();
   } catch (error) {
-    return res.status(401).json({
-      message: "Invalid or expired token"
-    });
+    console.error("[authMiddleware] DB error during token verification:", error.message);
+    return next(error);
   }
 };
 
