@@ -2,7 +2,10 @@ const multer = require("multer");
 const path   = require("path");
 const fs     = require("fs");
 
-const UPLOAD_DIR = path.join(__dirname, "..", "uploads");
+// Vercel's filesystem is read-only except /tmp; use /tmp in production
+const UPLOAD_DIR = process.env.VERCEL
+  ? "/tmp/uploads"
+  : path.join(__dirname, "..", "uploads");
 
 // Ensure uploads directory exists
 if (!fs.existsSync(UPLOAD_DIR)) {
