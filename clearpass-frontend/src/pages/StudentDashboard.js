@@ -79,10 +79,18 @@ export default function StudentDashboard() {
   const [status, setStatus]       = useState(null);
   const [history, setHistory]     = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [profile, setProfile]     = useState(null); // ADDED: student_code + tgc
   const [uploading, setUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef(null);
   const prevStatusRef = useRef(null);
+
+  const loadProfile = useCallback(async () => { // ADDED
+    try {
+      const res = await API.get("/api/student/profile");
+      setProfile(res.data.data);
+    } catch { /* silent */ }
+  }, []);
 
   const loadStatus = useCallback(async () => {
     try {
@@ -109,11 +117,11 @@ export default function StudentDashboard() {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([loadStatus(), loadHistory(), loadDocuments()]);
+      await Promise.all([loadStatus(), loadHistory(), loadDocuments(), loadProfile()]); // ADDED: loadProfile
       setLoading(false);
     };
     init();
-  }, [loadStatus, loadHistory, loadDocuments]);
+  }, [loadStatus, loadHistory, loadDocuments, loadProfile]); // ADDED: loadProfile dep
 
   // Poll every 15s for status changes and toast if something changed
   useEffect(() => {
@@ -223,6 +231,31 @@ export default function StudentDashboard() {
           {/* ── OVERVIEW ───────────────────────────────────────────── */}
           {activeKey === "overview" && (
             <div className="space-y-6">
+
+              {/* ADDED: Student Identity Card (student_code + TGC) */}
+              {profile && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-wrap gap-6 items-center">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-11 h-11 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg shrink-0">
+                      {(profile.name || "S").charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">{profile.name}</p>
+                      <p className="text-xs text-gray-400 truncate">{profile.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 flex-wrap">
+                    <div className="bg-blue-50 rounded-lg px-4 py-2 text-center">
+                      <p className="text-xs text-blue-500 font-medium uppercase tracking-wide">Student ID</p>
+                      <p className="text-sm font-bold text-blue-800 mt-0.5">{profile.student_code}</p>
+                    </div>
+                    <div className="bg-indigo-50 rounded-lg px-4 py-2 text-center">
+                      <p className="text-xs text-indigo-500 font-medium uppercase tracking-wide">Total Grade Credits</p>
+                      <p className="text-sm font-bold text-indigo-800 mt-0.5">{profile.tgc ?? 0}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Clearance Status Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

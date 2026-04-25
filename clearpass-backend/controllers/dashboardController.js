@@ -2,8 +2,8 @@ const db = require("../db");
 
 const getDashboard = async (req, res, next) => {
   try {
-    const [users] = await db.query(
-      "SELECT id, name, email, role FROM users WHERE id = ? LIMIT 1",
+    const { rows: users } = await db.query(
+      "SELECT id, name, email, role FROM users WHERE id = $1 LIMIT 1",
       [req.user.id]
     );
 
@@ -17,14 +17,14 @@ const getDashboard = async (req, res, next) => {
     let stats = {};
 
     if (user.role === "student") {
-      const [rows] = await db.query(
+      const { rows } = await db.query(
         `SELECT
             COUNT(*) AS totalRequests,
-            COALESCE(SUM(status = 'pending'), 0) AS pendingRequests,
-            COALESCE(SUM(status = 'approved'), 0) AS approvedRequests,
-            COALESCE(SUM(status = 'rejected'), 0) AS rejectedRequests
+            COALESCE(SUM(CASE WHEN status = 'pending'  THEN 1 ELSE 0 END), 0) AS pendingRequests,
+            COALESCE(SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END), 0) AS approvedRequests,
+            COALESCE(SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END), 0) AS rejectedRequests
          FROM clearance_requests
-         WHERE student_id = ?`,
+         WHERE student_id = $1`,
         [user.id]
       );
 
@@ -32,14 +32,14 @@ const getDashboard = async (req, res, next) => {
     }
 
     if (user.role === "teacher") {
-      const [rows] = await db.query(
+      const { rows } = await db.query(
         `SELECT
             COUNT(*) AS totalAssigned,
-            COALESCE(SUM(status = 'pending'), 0) AS pendingRequests,
-            COALESCE(SUM(status = 'approved'), 0) AS approvedRequests,
-            COALESCE(SUM(status = 'rejected'), 0) AS rejectedRequests
+            COALESCE(SUM(CASE WHEN status = 'pending'  THEN 1 ELSE 0 END), 0) AS pendingRequests,
+            COALESCE(SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END), 0) AS approvedRequests,
+            COALESCE(SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END), 0) AS rejectedRequests
          FROM clearance_requests
-         WHERE assigned_teacher_id = ?`,
+         WHERE teacher_id = $1`,
         [user.id]
       );
 
@@ -55,28 +55,28 @@ const getDashboard = async (req, res, next) => {
       };
 
       try {
-        const [requestRows] = await db.query(
+        const { rows: requestRows } = await db.query(
           `SELECT
               COUNT(*) AS totalRequests,
-              COALESCE(SUM(status = 'pending'), 0) AS pendingRequests,
-              COALESCE(SUM(status = 'approved'), 0) AS approvedRequests,
-              COALESCE(SUM(status = 'rejected'), 0) AS rejectedRequests
+              COALESCE(SUM(CASE WHEN status = 'pending'  THEN 1 ELSE 0 END), 0) AS pendingRequests,
+              COALESCE(SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END), 0) AS approvedRequests,
+              COALESCE(SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END), 0) AS rejectedRequests
            FROM clearance_requests`
         );
 
         requestStats = requestRows[0];
       } catch (error) {
-        if (error.code !== "ER_NO_SUCH_TABLE") {
+        if (error.code !== "42P01") {
           throw error;
         }
       }
 
-      const [userRows] = await db.query(
+      const { rows: userRows } = await db.query(
         `SELECT
             COUNT(*) AS totalUsers,
-            COALESCE(SUM(role = 'student'), 0) AS totalStudents,
-            COALESCE(SUM(role = 'teacher'), 0) AS totalTeachers,
-            COALESCE(SUM(role = 'admin'), 0) AS totalAdmins
+            COALESCE(SUM(CASE WHEN role = 'student' THEN 1 ELSE 0 END), 0) AS totalStudents,
+            COALESCE(SUM(CASE WHEN role = 'teacher' THEN 1 ELSE 0 END), 0) AS totalTeachers,
+            COALESCE(SUM(CASE WHEN role = 'admin'   THEN 1 ELSE 0 END), 0) AS totalAdmins
          FROM users`
       );
 

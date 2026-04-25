@@ -7,7 +7,7 @@ const db = require("../db");
  */
 const getAssignments = async (req, res, next) => {
   try {
-    const [rows] = await db.query(`
+    const { rows } = await db.query(`
       SELECT ma.module_name, ma.assigned_user_id, ma.updated_at,
              u.name  AS assigned_user_name,
              u.email AS assigned_user_email,
@@ -39,8 +39,8 @@ const setAssignment = async (req, res, next) => {
 
     // Validate user exists and has a staff role (teacher/admin)
     if (assigned_user_id !== null && assigned_user_id !== undefined) {
-      const [users] = await db.query(
-        "SELECT id, role FROM users WHERE id = ? LIMIT 1",
+      const { rows: users } = await db.query(
+        "SELECT id, role FROM users WHERE id = $1 LIMIT 1",
         [assigned_user_id]
       );
       if (!users.length) {
@@ -53,8 +53,8 @@ const setAssignment = async (req, res, next) => {
 
     await db.query(
       `INSERT INTO module_assignments (module_name, assigned_user_id)
-       VALUES (?, ?)
-       ON DUPLICATE KEY UPDATE assigned_user_id = VALUES(assigned_user_id), updated_at = NOW()`,
+       VALUES ($1, $2)
+       ON CONFLICT (module_name) DO UPDATE SET assigned_user_id = EXCLUDED.assigned_user_id, updated_at = NOW()`,
       [moduleName, assigned_user_id || null]
     );
 
@@ -71,7 +71,7 @@ const setAssignment = async (req, res, next) => {
  */
 const getStaff = async (req, res, next) => {
   try {
-    const [rows] = await db.query(
+    const { rows } = await db.query(
       "SELECT id, name, email, role, department FROM users WHERE role IN ('teacher','admin') ORDER BY name"
     );
     return res.json({ success: true, data: rows });

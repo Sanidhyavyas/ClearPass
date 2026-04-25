@@ -76,6 +76,17 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [auditLoading, setAuditLoading] = useState(false);
   const [assigningId, setAssigningId] = useState(null);
+  // ADDED: 3-tab user management state
+  const [userTab, setUserTab] = useState("students");
+  const [studentsList, setStudentsList] = useState([]);
+  const [teachersList, setTeachersList] = useState([]);
+  const [adminsList, setAdminsList] = useState([]);
+  const [usersTabLoading, setUsersTabLoading] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  // ADDED: create user form state
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: "", email: "", password: "", role: "" });
+  const [creating, setCreating] = useState(false);
   const { addToast } = useToast();
 
   const loadData = async () => {
@@ -153,6 +164,38 @@ function AdminDashboard() {
   useEffect(() => { if (activeKey === "analytics" && !analytics) loadAnalytics(); }, [activeKey]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (activeKey === "finalize") loadPendingFinal(); }, [activeKey]);
+  // ADDED: load user tab data when users section is opened or tab changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (activeKey === "users") loadUsersByTab(userTab); }, [activeKey, userTab]);
+
+  // ADDED: load users for a specific tab
+  const loadUsersByTab = async (tab) => {
+    try {
+      setUsersTabLoading(true);
+      setUserSearch("");
+      const res = await API.get(`/api/auth/admin/users/${tab}`);
+      if (tab === "students") setStudentsList(res.data.students || []);
+      else if (tab === "teachers") setTeachersList(res.data.teachers || []);
+      else if (tab === "admins") setAdminsList(res.data.admins || []);
+    } catch { addToast(`Failed to load ${tab}.`, "warning"); }
+    finally { setUsersTabLoading(false); }
+  };
+
+  // ADDED: submit create user form
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    try {
+      setCreating(true);
+      const res = await API.post("/api/auth/admin/create-user", createForm);
+      addToast(res.data.message, "success");
+      setCreateForm({ name: "", email: "", password: "", role: "" });
+      setShowCreateUser(false);
+      loadUsersByTab(userTab);
+      loadData(); // refresh overview stats
+    } catch (err) {
+      addToast(err.response?.data?.message || "Failed to create user.", "error");
+    } finally { setCreating(false); }
+  };
 
   const handleAssignTeacher = async (requestId) => {
     const teacherId = assignmentMap[requestId];
@@ -354,54 +397,229 @@ function AdminDashboard() {
             </div>
           )}
 
-          {/* USERS TABLE */}
+          {/* USERS TABLE — ADDED: 3 tabs + create user form */}
           {activeKey === "users" && (
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search users…" className={`${inputClass} pl-9`} aria-label="Search users" />
+              {/* Tab bar + Create User button */}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
+                  {[
+                    { key: "students", label: "Students" },
+                    { key: "teachers", label: "Teachers" },
+                    { key: "admins",   label: "Admins"   },
+                  ].map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => setUserTab(t.key)}
+                      className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        userTab === t.key
+                          ? "bg-white text-slate-900 shadow-sm"
+                          : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
                 </div>
-                <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-44" aria-label="Filter by role">
-                  <option value="all">All roles</option>
-                  <option value="student">Students</option>
-                  <option value="teacher">Teachers</option>
-                  <option value="admin">Admins</option>
-                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateUser((v) => !v)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                >
+                  {showCreateUser ? "Cancel" : "+ Create User"}
+                </button>
               </div>
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                {filteredUsers.length === 0 ? (
-                  <EmptyState title="No users found" desc="Try adjusting your search or filter." />
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm" aria-label="Users table">
-                      <THead cols={["Name", "Email", "Role", "Department"]} />
-                      <tbody className="divide-y divide-slate-100">
-                        {filteredUsers.map((u) => {
-                          const roleColor = { student: "bg-blue-50 text-blue-700 ring-blue-200", teacher: "bg-amber-50 text-amber-700 ring-amber-200", admin: "bg-green-50 text-green-700 ring-green-200" };
-                          return (
-                            <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
+
+              {/* ADDED: Create User inline form */}
+              {showCreateUser && (
+                <div className="bg-white rounded-xl border border-slate-200 p-5">
+                  <h3 className="text-sm font-semibold text-slate-800 mb-4">Create New User</h3>
+                  <form onSubmit={handleCreateUser} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input
+                      required
+                      type="text"
+                      placeholder="Full name"
+                      value={createForm.name}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
+                      className={inputClass}
+                    />
+                    <input
+                      required
+                      type="email"
+                      placeholder="Email address"
+                      value={createForm.email}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+                      className={inputClass}
+                    />
+                    <input
+                      required
+                      type="password"
+                      placeholder="Password"
+                      value={createForm.password}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
+                      className={inputClass}
+                    />
+                    {/* ADDED: role dropdown — no clearance_status field */}
+                    <select
+                      required
+                      value={createForm.role}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, role: e.target.value }))}
+                      className={inputClass}
+                    >
+                      <option value="">Select Role</option>
+                      <option value="student">Student</option>
+                      <option value="teacher">Teacher</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <div className="sm:col-span-2 flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={creating}
+                        className="px-5 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                      >
+                        {creating ? "Creating…" : "Create User"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Per-tab search */}
+              <div className="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                <input
+                  type="text"
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  placeholder={`Search ${userTab}…`}
+                  className={`${inputClass} pl-9`}
+                  aria-label={`Search ${userTab}`}
+                />
+              </div>
+
+              {/* ADDED: Tab 1 — Students */}
+              {userTab === "students" && (
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                  {usersTabLoading ? (
+                    <div className="p-8 text-center text-slate-400 text-sm">Loading…</div>
+                  ) : studentsList.filter((s) => {
+                    const q = userSearch.trim().toLowerCase();
+                    return !q || s.name?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q) || s.student_code?.toLowerCase().includes(q);
+                  }).length === 0 ? (
+                    <EmptyState title="No students found" desc="Create a student account using the form above." />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm" aria-label="Students table">
+                        <THead cols={["Name", "Student Code", "TGC", "Email"]} />
+                        <tbody className="divide-y divide-slate-100">
+                          {studentsList.filter((s) => {
+                            const q = userSearch.trim().toLowerCase();
+                            return !q || s.name?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q) || s.student_code?.toLowerCase().includes(q);
+                          }).map((s) => (
+                            <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2.5">
-                                  <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-600 shrink-0">
-                                    {(u.name || "U").charAt(0).toUpperCase()}
+                                  <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-700 shrink-0">
+                                    {(s.name || "S").charAt(0).toUpperCase()}
                                   </div>
-                                  <span className="font-medium text-slate-800">{u.name}</span>
+                                  <span className="font-medium text-slate-800">{s.name}</span>
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-slate-500">{u.email}</td>
-                              <td className="px-4 py-3">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ring-1 capitalize ${roleColor[u.role] || "bg-slate-50 text-slate-600 ring-slate-200"}`}>{u.role}</span>
-                              </td>
-                              <td className="px-4 py-3 text-slate-500">{u.department || "—"}</td>
+                              <td className="px-4 py-3"><span className="font-mono text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{s.student_code || "—"}</span></td>
+                              <td className="px-4 py-3 text-slate-700 font-medium">{s.tgc ?? 0}</td>
+                              <td className="px-4 py-3 text-slate-500">{s.email}</td>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ADDED: Tab 2 — Teachers */}
+              {userTab === "teachers" && (
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                  {usersTabLoading ? (
+                    <div className="p-8 text-center text-slate-400 text-sm">Loading…</div>
+                  ) : teachersList.filter((t) => {
+                    const q = userSearch.trim().toLowerCase();
+                    return !q || t.name?.toLowerCase().includes(q) || t.email?.toLowerCase().includes(q);
+                  }).length === 0 ? (
+                    <EmptyState title="No teachers found" desc="Create a teacher account using the form above." />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm" aria-label="Teachers table">
+                        <THead cols={["Name", "Email", "Department"]} />
+                        <tbody className="divide-y divide-slate-100">
+                          {teachersList.filter((t) => {
+                            const q = userSearch.trim().toLowerCase();
+                            return !q || t.name?.toLowerCase().includes(q) || t.email?.toLowerCase().includes(q);
+                          }).map((t) => (
+                            <tr key={t.id} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-xs font-semibold text-amber-700 shrink-0">
+                                    {(t.name || "T").charAt(0).toUpperCase()}
+                                  </div>
+                                  <span className="font-medium text-slate-800">{t.name}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-slate-500">{t.email}</td>
+                              <td className="px-4 py-3 text-slate-500">{t.department || "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ADDED: Tab 3 — Admins */}
+              {userTab === "admins" && (
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                  {usersTabLoading ? (
+                    <div className="p-8 text-center text-slate-400 text-sm">Loading…</div>
+                  ) : adminsList.filter((a) => {
+                    const q = userSearch.trim().toLowerCase();
+                    return !q || a.name?.toLowerCase().includes(q) || a.email?.toLowerCase().includes(q);
+                  }).length === 0 ? (
+                    <EmptyState title="No admins found" desc="Create an admin account using the form above." />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm" aria-label="Admins table">
+                        <THead cols={["Name", "Email", "Role"]} />
+                        <tbody className="divide-y divide-slate-100">
+                          {adminsList.filter((a) => {
+                            const q = userSearch.trim().toLowerCase();
+                            return !q || a.name?.toLowerCase().includes(q) || a.email?.toLowerCase().includes(q);
+                          }).map((a) => {
+                            const roleColor = { admin: "bg-green-50 text-green-700 ring-green-200", super_admin: "bg-purple-50 text-purple-700 ring-purple-200" };
+                            return (
+                              <tr key={a.id} className="hover:bg-slate-50/60 transition-colors">
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-xs font-semibold text-green-700 shrink-0">
+                                      {(a.name || "A").charAt(0).toUpperCase()}
+                                    </div>
+                                    <span className="font-medium text-slate-800">{a.name}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-slate-500">{a.email}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ring-1 capitalize ${roleColor[a.role] || "bg-slate-50 text-slate-600 ring-slate-200"}`}>{a.role}</span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

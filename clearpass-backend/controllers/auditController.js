@@ -17,7 +17,7 @@ const createAuditLog = async ({
     await db.query(
       `INSERT INTO audit_logs
          (user_id, user_name, user_role, action, target_type, target_id, details)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [userId, userName, userRole, action, targetType, targetId, details]
     );
   } catch (err) {
@@ -28,8 +28,8 @@ const createAuditLog = async ({
 const getAuditLogs = async (req, res, next) => {
   try {
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
-    const [logs] = await db.query(
-      "SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT ?",
+    const { rows: logs } = await db.query(
+      "SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT $1",
       [limit]
     );
     return res.json({ logs });

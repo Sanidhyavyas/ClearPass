@@ -147,7 +147,7 @@ async function generateCertificate({ student, request, modules, token, certPath 
 // ── GET /api/clearance/pending-final ─────────────────────────────────────
 const getPendingFinal = async (req, res, next) => {
   try {
-    const [rows] = await db.query(`
+    const { rows } = await db.query(`
       SELECT cr.*,
              COALESCE(cr.submitted_at, cr.created_at) AS submitted_at,
              u.name  AS student_name,
@@ -174,11 +174,11 @@ const finalizeRequest = async (req, res, next) => {
     }
 
     // Fetch request + student
-    const [rows] = await db.query(
+    const { rows } = await db.query(
       `SELECT cr.*, u.name AS student_name, u.email AS student_email, u.department AS student_dept
        FROM clearance_requests cr
        JOIN users u ON u.id = cr.student_id
-       WHERE cr.id = ? LIMIT 1`,
+       WHERE cr.id = $1 LIMIT 1`,
       [requestId]
     );
     if (!rows.length) return res.status(404).json({ message: "Request not found" });
@@ -192,14 +192,14 @@ const finalizeRequest = async (req, res, next) => {
         `UPDATE clearance_requests
            SET status = 'approved', current_stage = 'completed',
                approved_at = NOW(), updated_at = NOW()
-         WHERE id = ?`,
+         WHERE id = $1`,
         [requestId]
       );
     } else {
       await db.query(
         `UPDATE clearance_requests
-           SET status = 'rejected', rejection_reason = ?, rejected_at = NOW(), updated_at = NOW()
-         WHERE id = ?`,
+           SET status = 'rejected', rejection_reason = $1, rejected_at = NOW(), updated_at = NOW()
+         WHERE id = $2`,
         [remarks || null, requestId]
       );
     }
@@ -207,7 +207,7 @@ const finalizeRequest = async (req, res, next) => {
     // ── Audit log ─────────────────────────────────────────────────
     await db.query(
       `INSERT INTO clearance_audit_logs (request_id, action, performed_by, performed_by_role, remarks)
-       VALUES (?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5)`,
       [requestId, status, req.user.id, req.user.role, remarks || null]
     );
 
@@ -228,11 +228,11 @@ const finalizeRequest = async (req, res, next) => {
       certPath    = path.join(CERT_DIR, `${student.id}_${requestId}.pdf`);
 
       // Fetch modules with reviewer names
-      const [modules] = await db.query(
+      const { rows: modules } = await db.query(
         `SELECT cm.*, u.name AS reviewer_name
          FROM clearance_modules cm
-         LEFT JOIN users u ON u.id = cm.reviewed_by
-         WHERE cm.student_id = ?
+         LEFT JOIN users u ON u.id = cm.updated_by
+         WHERE cm.student_id = $1
          ORDER BY cm.module_name`,
         [student.id]
       );
@@ -242,8 +242,8 @@ const finalizeRequest = async (req, res, next) => {
       // Store QR token
       await db.query(
         `INSERT INTO qr_tokens (token, request_id, student_id, certificate_path)
-         VALUES (?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE certificate_path = VALUES(certificate_path)`,
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (request_id) DO UPDATE SET certificate_path = EXCLUDED.certificate_path`,
         [token, requestId, student.id, certPath]
       );
 
@@ -272,8 +272,8 @@ const getCertificate = async (req, res, next) => {
     const userRole  = req.user.role;
 
     // Students may only fetch their own certificate
-    const [rows] = await db.query(
-      "SELECT * FROM qr_tokens WHERE request_id = ? LIMIT 1",
+    const { rows } = await db.query(
+      "SELECT * FROM qr_tokens WHERE request_id = $1 LIMIT 1",
       [requestId]
     );
 
@@ -305,13 +305,13 @@ const verifyToken = async (req, res, next) => {
   try {
     const { token } = req.params;
 
-    const [rows] = await db.query(
+    const { rows } = await db.query(
       `SELECT qt.*, u.name AS student_name, u.department,
               cr.status AS clearance_status, cr.approved_at
        FROM qr_tokens qt
        JOIN users               u  ON u.id  = qt.student_id
        JOIN clearance_requests  cr ON cr.id = qt.request_id
-       WHERE qt.token = ? LIMIT 1`,
+       WHERE qt.token = $1 LIMIT 1`,
       [token]
     );
 

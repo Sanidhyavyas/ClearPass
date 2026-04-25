@@ -38,8 +38,8 @@ const loginSuperAdmin = async (req, res, next) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const [rows] = await db.query(
-      "SELECT id, name, email, password FROM super_admins WHERE email = ? LIMIT 1",
+    const { rows } = await db.query(
+      "SELECT id, name, email, password FROM super_admins WHERE email = $1 LIMIT 1",
       [normalizedEmail]
     );
 
@@ -66,8 +66,8 @@ const loginSuperAdmin = async (req, res, next) => {
 
 const getSuperAdminProfile = async (req, res, next) => {
   try {
-    const [rows] = await db.query(
-      "SELECT id, name, email FROM super_admins WHERE id = ? LIMIT 1",
+    const { rows } = await db.query(
+      "SELECT id, name, email FROM super_admins WHERE id = $1 LIMIT 1",
       [req.user.id]
     );
 
@@ -90,16 +90,16 @@ const getSuperAdminProfile = async (req, res, next) => {
 
 const getSuperAdminOverview = async (req, res, next) => {
   try {
-    const [userCounts] = await db.query(
+    const { rows: [userCounts] } = await db.query(
       `SELECT
           COUNT(*) AS totalUsers,
-          COALESCE(SUM(role = 'student'), 0) AS totalStudents,
-          COALESCE(SUM(role = 'teacher'), 0) AS totalTeachers,
-          COALESCE(SUM(role = 'admin'), 0) AS totalAdmins
+          COALESCE(SUM(CASE WHEN role = 'student' THEN 1 ELSE 0 END), 0) AS totalStudents,
+          COALESCE(SUM(CASE WHEN role = 'teacher' THEN 1 ELSE 0 END), 0) AS totalTeachers,
+          COALESCE(SUM(CASE WHEN role = 'admin'   THEN 1 ELSE 0 END), 0) AS totalAdmins
        FROM users`
     );
 
-    const [superAdminCounts] = await db.query(
+    const { rows: [superAdminCounts] } = await db.query(
       "SELECT COUNT(*) AS totalSuperAdmins FROM super_admins"
     );
 

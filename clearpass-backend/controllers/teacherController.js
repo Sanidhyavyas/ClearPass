@@ -4,12 +4,12 @@ const db = require("../db");
 const markOverdue = async (department) => {
   try {
     const params = ["pending", new Date()];
-    const deptClause = department ? " AND department = ?" : "";
+    const deptClause = department ? ` AND department = $${params.length + 1}` : "";
     if (department) params.push(department);
     await db.query(
       `UPDATE clearance_requests
          SET is_overdue = TRUE
-       WHERE status = ? AND deadline IS NOT NULL AND deadline < ?
+       WHERE status = $1 AND deadline IS NOT NULL AND deadline < $2
          AND is_overdue = FALSE${deptClause}`,
       params
     );
@@ -38,36 +38,42 @@ const getRequests = async (req, res, next) => {
     const conditions = [];
     const params     = [];
 
+    conditions.push("u.role = 'student'"); // FIXED: never return admin/teacher rows in student lists
+
     // Department filter: enforced for teachers, optional for admins.
     // Only filter by department if the teacher actually has one set.
     if (role === "teacher" && userDept) {
-      conditions.push("cr.department = ?");
+      conditions.push(`cr.department = $${params.length + 1}`);
       params.push(userDept);
     } else if (role !== "teacher" && department) {
-      conditions.push("cr.department = ?");
+      conditions.push(`cr.department = $${params.length + 1}`);
       params.push(department);
     }
 
-    if (semester) { conditions.push("cr.semester = ?");  params.push(semester); }
-    if (year)     { conditions.push("cr.year = ?");      params.push(parseInt(year, 10)); }
-    if (status)   { conditions.push("cr.status = ?");    params.push(status); }
+    if (semester) { conditions.push(`cr.semester = $${params.length + 1}`);  params.push(semester); }
+    if (year)     { conditions.push(`cr.year = $${params.length + 1}`);      params.push(parseInt(year, 10)); }
+    if (status)   { conditions.push(`cr.status = $${params.length + 1}`);    params.push(status); }
     if (search) {
-      conditions.push("(cr.student_name LIKE ? OR cr.roll_number LIKE ?)");
+      const n = params.length;
+      conditions.push(`(cr.student_name ILIKE $${n + 1} OR cr.roll_number ILIKE $${n + 2})`);
       params.push(`%${search}%`, `%${search}%`);
     }
 
     const where       = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     const countParams = [...params];
 
-    const [[{ total }]] = await db.query(
+    const { rows: [countRow] } = await db.query(
       `SELECT COUNT(*) AS total FROM clearance_requests cr ${where}`,
       countParams
     );
+    const total = Number(countRow.total);
 
     // Select only base columns first; try extended columns and fall back gracefully
     let requests;
     try {
-      [requests] = await db.query(
+      const limitN  = params.length + 1;
+      const offsetN = params.length + 2;
+      const { rows } = await db.query(
         `SELECT
            cr.id, cr.student_id, cr.department, cr.semester, cr.year,
            cr.roll_number, cr.student_name, cr.status, cr.remarks,
@@ -81,13 +87,16 @@ const getRequests = async (req, res, next) => {
          ORDER BY
            CASE cr.status WHEN 'pending' THEN 0 WHEN 'rejected' THEN 1 ELSE 2 END,
            COALESCE(cr.submitted_at, cr.created_at) DESC
-         LIMIT ? OFFSET ?`,
+         LIMIT $${limitN} OFFSET $${offsetN}`,
         [...params, limitNum, offset]
       );
+      requests = rows;
     } catch (colErr) {
-      // Fallback: migration may not have added all columns yet — use only original columns
+      // Fallback: use only original columns
       console.warn("Extended columns missing, using base query:", colErr.message);
-      [requests] = await db.query(
+      const limitN  = params.length + 1;
+      const offsetN = params.length + 2;
+      const { rows } = await db.query(
         `SELECT
            cr.id, cr.student_id, cr.status, cr.remarks,
            cr.created_at AS submitted_at,
@@ -96,13 +105,14 @@ const getRequests = async (req, res, next) => {
          LEFT JOIN users u ON u.id = cr.student_id
          ${where}
          ORDER BY CASE cr.status WHEN 'pending' THEN 0 WHEN 'rejected' THEN 1 ELSE 2 END, cr.created_at DESC
-         LIMIT ? OFFSET ?`,
+         LIMIT $${limitN} OFFSET $${offsetN}`,
         [...params, limitNum, offset]
       );
+      requests = rows;
     }
 
     // Status breakdown for stat cards
-    const [statusRows] = await db.query(
+    const { rows: statusRows } = await db.query(
       `SELECT status, COUNT(*) AS cnt FROM clearance_requests cr ${where} GROUP BY status`,
       countParams
     );
@@ -129,12 +139,12 @@ const getRequestById = async (req, res, next) => {
     const { id }    = req.params;
     const { role, department: userDept } = req.user;
 
-    const [rows] = await db.query(
+    const { rows } = await db.query(
       `SELECT cr.*, COALESCE(cr.submitted_at, cr.created_at) AS submitted_at,
               u.email AS student_email
        FROM clearance_requests cr
        LEFT JOIN users u ON u.id = cr.student_id
-       WHERE cr.id = ? LIMIT 1`,
+       WHERE cr.id = $1 LIMIT 1`,
       [id]
     );
 
@@ -148,16 +158,16 @@ const getRequestById = async (req, res, next) => {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
 
-    const [modules] = await db.query(
-      "SELECT * FROM clearance_modules WHERE student_id = ? ORDER BY module_name",
+    const { rows: modules } = await db.query(
+      "SELECT * FROM clearance_modules WHERE student_id = $1 ORDER BY module_name",
       [request.student_id]
     );
 
-    const [auditLog] = await db.query(
+    const { rows: auditLog } = await db.query(
       `SELECT cal.*, u.name AS performer_name
        FROM clearance_audit_logs cal
        LEFT JOIN users u ON u.id = cal.performed_by
-       WHERE cal.request_id = ?
+       WHERE cal.request_id = $1
        ORDER BY cal.timestamp DESC`,
       [id]
     );
@@ -182,8 +192,8 @@ const approveRequest = async (req, res, next) => {
     const { id }                       = req.params;
     const { role, department: userDept, id: userId } = req.user;
 
-    const [rows] = await db.query(
-      "SELECT id, status, department, current_stage FROM clearance_requests WHERE id = ? LIMIT 1",
+    const { rows } = await db.query(
+      "SELECT id, status, department, current_stage FROM clearance_requests WHERE id = $1 LIMIT 1",
       [id]
     );
     if (!rows.length) return res.status(404).json({ success: false, message: "Request not found" });
@@ -208,23 +218,23 @@ const approveRequest = async (req, res, next) => {
       await db.query(
         `UPDATE clearance_requests
            SET status = 'approved', current_stage = 'completed',
-               approved_at = NOW(), teacher_id = ?, updated_at = NOW()
-         WHERE id = ?`,
+               approved_at = NOW(), teacher_id = $1, updated_at = NOW()
+         WHERE id = $2`,
         [userId, id]
       );
     } else {
       // Advance to next stage
       await db.query(
         `UPDATE clearance_requests
-           SET current_stage = ?, teacher_id = ?, updated_at = NOW()
-         WHERE id = ?`,
+           SET current_stage = $1, teacher_id = $2, updated_at = NOW()
+         WHERE id = $3`,
         [nextStage, userId, id]
       );
     }
 
     await db.query(
       `INSERT INTO clearance_audit_logs (request_id, action, performed_by, performed_by_role, remarks)
-       VALUES (?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5)`,
       [id, nextStage === "completed" ? "approved" : `approved_by_${role}`, userId, role, req.body.remarks || null]
     );
 
@@ -252,25 +262,25 @@ const rejectRequest = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Rejection reason is required (min 5 characters)" });
     }
 
-    const [rows] = await db.query(
-      "SELECT id, status, department FROM clearance_requests WHERE id = ? LIMIT 1",
+    const { rows: rejectRows } = await db.query(
+      "SELECT id, status, department FROM clearance_requests WHERE id = $1 LIMIT 1",
       [id]
     );
-    if (!rows.length) return res.status(404).json({ success: false, message: "Request not found" });
-    if (role === "teacher" && rows[0].department !== userDept) {
+    if (!rejectRows.length) return res.status(404).json({ success: false, message: "Request not found" });
+    if (role === "teacher" && rejectRows[0].department !== userDept) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
 
     await db.query(
       `UPDATE clearance_requests
-         SET status = 'rejected', rejection_reason = ?, rejected_at = NOW(), teacher_id = ?, updated_at = NOW()
-       WHERE id = ?`,
+         SET status = 'rejected', rejection_reason = $1, rejected_at = NOW(), teacher_id = $2, updated_at = NOW()
+       WHERE id = $3`,
       [rejection_reason.trim(), userId, id]
     );
 
     await db.query(
       `INSERT INTO clearance_audit_logs (request_id, action, performed_by, performed_by_role, remarks)
-       VALUES (?, 'rejected', ?, ?, ?)`,
+       VALUES ($1, 'rejected', $2, $3, $4)`,
       [id, userId, role, rejection_reason.trim()]
     );
 
@@ -291,13 +301,13 @@ const requestChanges = async (req, res, next) => {
     const { role, id: userId } = req.user;
 
     await db.query(
-      "UPDATE clearance_requests SET remarks = ?, updated_at = NOW() WHERE id = ?",
+      "UPDATE clearance_requests SET remarks = $1, updated_at = NOW() WHERE id = $2",
       [remarks || null, id]
     );
 
     await db.query(
       `INSERT INTO clearance_audit_logs (request_id, action, performed_by, performed_by_role, remarks)
-       VALUES (?, 'changes_requested', ?, ?, ?)`,
+       VALUES ($1, 'changes_requested', $2, $3, $4)`,
       [id, userId, role, remarks || null]
     );
 
@@ -314,16 +324,16 @@ const requestChanges = async (req, res, next) => {
 const getStats = async (req, res, next) => {
   try {
     const { role, department } = req.user;
-    const deptClause = role === "teacher" ? "WHERE department = ?" : "";
+    const deptClause = role === "teacher" ? "WHERE department = $1" : "";
     const params     = role === "teacher" ? [department] : [];
 
-    const [[row]] = await db.query(
+    const { rows: [row] } = await db.query(
       `SELECT
-         COUNT(*)                                              AS total,
-         SUM(status = 'pending')                              AS pending,
-         SUM(status = 'approved')                             AS approved,
-         SUM(status = 'rejected')                             AS rejected,
-         SUM(is_overdue = TRUE AND status = 'pending')        AS overdue
+         COUNT(*)                                                                             AS total,
+         SUM(CASE WHEN status = 'pending'  THEN 1 ELSE 0 END)                                AS pending,
+         SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END)                                AS approved,
+         SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END)                                AS rejected,
+         SUM(CASE WHEN is_overdue = TRUE AND status = 'pending' THEN 1 ELSE 0 END)           AS overdue
        FROM clearance_requests
        ${deptClause}`,
       params
