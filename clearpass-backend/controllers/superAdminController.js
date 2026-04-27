@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const db = require("../db");
+const { createAuditLog } = require("./auditController");
 
 const buildSuperAdminAuthResponse = (superAdmin) => {
   const token = jwt.sign(
@@ -114,8 +115,84 @@ const getSuperAdminOverview = async (req, res, next) => {
   }
 };
 
+// ── GET /api/super-admin/clearance-requests ───────────────────────────────
+const getClearanceRequests = async (req, res, next) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT cr.id, cr.status, cr.remarks, cr.rejection_reason, cr.department,
+              cr.semester, cr.year, cr.roll_number, cr.student_name, cr.current_stage,
+              cr.fee_status, cr.fee_remarks, cr.fee_approved_at,
+              COALESCE(cr.submitted_at, cr.created_at) AS submitted_at,
+              cr.approved_at, cr.updated_at,
+              u.id    AS student_id,
+              u.email AS student_email,
+              t.name  AS assigned_teacher_name
+       FROM clearance_requests cr
+       JOIN  users u ON u.id = cr.student_id
+       LEFT JOIN users t ON t.id = cr.teacher_id
+       ORDER BY CASE cr.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END,
+                COALESCE(cr.submitted_at, cr.created_at) DESC`
+    );
+    return res.json({ requests: rows });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// ── PATCH /api/super-admin/clearance/:id/approve ─────────────────────────
+const superAdminApproveClearance = async (req, res, next) => {
+  try {
+    const requestId           = Number(req.params.id);
+    const { status, remarks } = req.body;
+
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({ message: "status must be 'approved' or 'rejected'" });
+    }
+
+    const { rows } = await db.query(
+      "SELECT id, student_id FROM clearance_requests WHERE id = $1 LIMIT 1",
+      [requestId]
+    );
+    if (!rows.length) return res.status(404).json({ message: "Clearance request not found" });
+
+    if (status === "approved") {
+      await db.query(
+        `UPDATE clearance_requests
+           SET status = 'approved', current_stage = 'completed',
+               approved_at = NOW(), updated_at = NOW()
+         WHERE id = $1`,
+        [requestId]
+      );
+    } else {
+      await db.query(
+        `UPDATE clearance_requests
+           SET status = 'rejected', rejection_reason = $1,
+               rejected_at = NOW(), updated_at = NOW()
+         WHERE id = $2`,
+        [remarks || null, requestId]
+      );
+    }
+
+    await createAuditLog({
+      userId:     req.user.id,
+      userName:   req.user.name || "Super Admin",
+      userRole:   "super_admin",
+      action:     status,
+      targetType: "clearance_request",
+      targetId:   requestId,
+      details:    `Clearance request #${requestId} ${status} by Super Admin${remarks ? `. Remarks: ${remarks}` : ""}`,
+    });
+
+    return res.json({ message: `Clearance request ${status} by super admin` });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
+  getClearanceRequests,
   getSuperAdminOverview,
   getSuperAdminProfile,
-  loginSuperAdmin
+  loginSuperAdmin,
+  superAdminApproveClearance,
 };

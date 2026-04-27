@@ -7,6 +7,7 @@ const {
   getAssignedRequests,
   getStudentRequests,
   getTeachers,
+  updateFeeStatus,
   updateRequestStatus
 } = require("../controllers/clearanceController");
 const { authorizeRoles, verifyToken } = require("../middleware/authMiddleware");
@@ -20,5 +21,6 @@ router.put("/update-status/:id", verifyToken, authorizeRoles("teacher"), updateR
 router.get("/all-requests", verifyToken, authorizeRoles("admin"), getAllRequests);
 router.get("/teachers", verifyToken, authorizeRoles("admin"), getTeachers);
 router.put("/assign-teacher/:id", verifyToken, authorizeRoles("admin"), assignTeacher);
+router.patch("/clearance/:id/fee", verifyToken, authorizeRoles("admin"), updateFeeStatus);
 
 module.exports = router;

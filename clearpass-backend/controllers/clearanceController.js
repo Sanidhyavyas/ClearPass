@@ -158,16 +158,19 @@ const getAllRequests = async (req, res, next) => {
     try {
       const { rows } = await db.query(
         `SELECT cr.id, cr.status, cr.remarks, cr.department, cr.semester, cr.year,
-                cr.roll_number, cr.student_name, cr.is_overdue,
+                cr.roll_number, cr.student_name, cr.is_overdue, cr.current_stage,
+                cr.fee_status, cr.fee_remarks, cr.fee_approved_at,
                 COALESCE(cr.submitted_at, cr.created_at) AS created_at,
                 student.id    AS student_id,
                 student.email AS student_email,
                 teacher.id    AS assigned_teacher_id,
                 teacher.name  AS assigned_teacher_name,
-                teacher.email AS assigned_teacher_email
+                teacher.email AS assigned_teacher_email,
+                fa.name       AS fee_approved_by_name
          FROM clearance_requests cr
          INNER JOIN users student ON student.id = cr.student_id
          LEFT JOIN users teacher  ON teacher.id = cr.teacher_id
+         LEFT JOIN users fa       ON fa.id = cr.fee_approved_by
          ORDER BY CASE cr.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END,
                   COALESCE(cr.submitted_at, cr.created_at) DESC`
       );
@@ -178,6 +181,49 @@ const getAllRequests = async (req, res, next) => {
     }
 
     return res.json({ requests });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// Admin: approve or reject fee payment for a clearance request
+const updateFeeStatus = async (req, res, next) => {
+  try {
+    const requestId = req.params.id;
+    const { status, remarks } = req.body;
+
+    if (!VALID_STATUSES.includes(status) || status === "pending") {
+      return res.status(400).json({ message: "Status must be 'approved' or 'rejected'" });
+    }
+
+    const { rows } = await db.query(
+      "SELECT id, student_id FROM clearance_requests WHERE id = $1 LIMIT 1",
+      [requestId]
+    );
+    if (!rows.length) return res.status(404).json({ message: "Clearance request not found" });
+
+    await db.query(
+      `UPDATE clearance_requests
+         SET fee_status      = $1,
+             fee_remarks     = $2,
+             fee_approved_by = $3,
+             fee_approved_at = NOW(),
+             updated_at      = NOW()
+       WHERE id = $4`,
+      [status, remarks ? remarks.trim() : null, req.user.id, requestId]
+    );
+
+    await createAuditLog({
+      userId:     req.user.id,
+      userName:   req.user.name,
+      userRole:   req.user.role,
+      action:     `fee_${status}`,
+      targetType: "clearance_request",
+      targetId:   Number(requestId),
+      details:    `Fee ${status} for request #${requestId} by ${req.user.name}${remarks ? `. Remarks: ${remarks}` : ""}`,
+    });
+
+    return res.json({ message: `Fee payment ${status} successfully` });
   } catch (error) {
     return next(error);
   }
@@ -246,5 +292,6 @@ module.exports = {
   getAssignedRequests,
   getStudentRequests,
   getTeachers,
+  updateFeeStatus,
   updateRequestStatus,
 };

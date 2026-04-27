@@ -7,9 +7,11 @@ const {
   updateUser
 } = require("../controllers/authController");
 const {
+  getClearanceRequests,
   getSuperAdminOverview,
   getSuperAdminProfile,
-  loginSuperAdmin
+  loginSuperAdmin,
+  superAdminApproveClearance,
 } = require("../controllers/superAdminController");
 const { authorizeRoles, verifyToken } = require("../middleware/authMiddleware");
 
@@ -22,5 +24,9 @@ router.get("/users", verifyToken, authorizeRoles("super_admin"), getAllUsers);
 router.post("/users", verifyToken, authorizeRoles("super_admin"), createUser);
 router.put("/users/:id", verifyToken, authorizeRoles("super_admin"), updateUser);
 router.delete("/users/:id", verifyToken, authorizeRoles("super_admin"), deleteUser);
+
+// Clearance management
+router.get("/clearance-requests", verifyToken, authorizeRoles("super_admin"), getClearanceRequests);
+router.patch("/clearance/:id/approve", verifyToken, authorizeRoles("super_admin"), superAdminApproveClearance);
 
 module.exports = router;

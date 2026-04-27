@@ -533,16 +533,18 @@ const approveStudentSubject = async (req, res, next) => {
       approval = created;
     }
 
+    // Compute approved_at in JS to avoid reusing $1 in CASE (causes "inconsistent types" error in PostgreSQL)
+    const approvedAt = status === "approved" ? new Date() : null;
     const { rows: [updated] } = await db.query(
       `UPDATE subject_approvals
        SET status              = $1,
            remarks             = $2,
            mini_project_status = $3,
            teacher_id          = $4,
-           approved_at         = CASE WHEN $1 = 'approved' THEN CURRENT_TIMESTAMP ELSE NULL END
+           approved_at         = $6
        WHERE id = $5
        RETURNING *`,
-      [status, remarks || null, mini_project_status || null, teacherId, approval[0].id]
+      [status, remarks || null, mini_project_status || null, teacherId, approval[0].id, approvedAt]
     );
 
     // Re-check overall certificate status
