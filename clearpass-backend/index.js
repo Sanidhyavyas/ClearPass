@@ -14,6 +14,10 @@ const uploadRoutes            = require("./routes/uploadRoutes");
 const analyticsRoutes         = require("./routes/analyticsRoutes");
 const certificateRoutes       = require("./routes/certificateRoutes");
 const moduleAssignmentRoutes  = require("./routes/moduleAssignmentRoutes");
+// ADDED: TGC routes
+const tgcSubjectRoutes        = require("./routes/tgcSubjectRoutes");
+const checklistRoutes         = require("./routes/checklistRoutes");
+const tgcCertRoutes           = require("./routes/tgcCertRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -49,6 +53,10 @@ app.use("/api/upload",  uploadRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api",           certificateRoutes);   // /api/clearance/:id/finalize, /api/verify/:token
 app.use("/api/modules",   moduleAssignmentRoutes);
+// ADDED: TGC — Term Grant Certificate routes
+app.use("/api/subjects",   tgcSubjectRoutes);    // TGC subject management
+app.use("/api/checklist",  checklistRoutes);     // Checklist builder + progress
+app.use("/api/certificate", tgcCertRoutes);      // TGC certificate request/download
 
 app.use((req, res) => {
   res.status(404).json({

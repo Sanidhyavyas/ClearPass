@@ -8,10 +8,12 @@ import { useToast } from "../context/ToastContext";
 import API from "../services/api";
 
 const navItems = [
-  { key: "overview", label: "Overview",          caption: "Platform-wide metrics"           },
-  { key: "create",   label: "Create User",       caption: "Add a new account"               },
-  { key: "manage",   label: "Manage Users",      caption: "Edit or remove accounts"         },
-  { key: "modules",  label: "Module Assignments",caption: "Assign staff to clearance modules" },
+  { key: "overview",     label: "Overview",          caption: "Platform-wide metrics"             },
+  { key: "create",       label: "Create User",       caption: "Add a new account"                 },
+  { key: "manage",       label: "Manage Users",      caption: "Edit or remove accounts"           },
+  { key: "modules",      label: "Module Assignments",caption: "Assign staff to clearance modules" },
+  { key: "tgc-subjects", label: "TGC Subjects",      caption: "Manage Term Grant subjects"        }, // ADDED
+  { key: "tgc-overview", label: "TGC Overview",      caption: "Analytics & student status"        }, // ADDED
 ];
 
 const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-150";
@@ -88,6 +90,26 @@ function SuperAdminDashboard() {
   const [moduleSelections, setModuleSelections] = useState({});
   const { addToast } = useToast();
 
+  // ADDED: TGC state
+  const [tgcSubjects,      setTgcSubjects]      = useState([]);
+  const [tgcAnalytics,     setTgcAnalytics]     = useState(null);
+  const [tgcStudents,      setTgcStudents]       = useState([]);
+  const [tgcLoading,       setTgcLoading]        = useState(false);
+  const [tgcSubjLoading,   setTgcSubjLoading]    = useState(false);
+  const [tgcSearchQuery,   setTgcSearchQuery]    = useState("");
+  const [tgcSubjForm,      setTgcSubjForm]       = useState({ name: "", code: "", subject_type: "TH", tgc_semester: 6, tgc_year: "TY", academic_year: "2025-26" });
+  const [savingSubj,       setSavingSubj]        = useState(false);
+  const [assignTeacherMap, setAssignTeacherMap]  = useState({}); // subjectId -> teacherId string
+  const [savingAssign,     setSavingAssign]      = useState(null); // subjectId being saved
+  const TGC_ITEM_TYPES = [
+    { value: "TH",   label: "Theory (TH)" },
+    { value: "PR",   label: "Practical (PR)" },
+    { value: "MP",   label: "Mini Project (MP)" },
+    { value: "MDM",  label: "MDM" },
+    { value: "PBL",  label: "PBL" },
+    { value: "SCIL", label: "SCIL" },
+  ];
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -136,6 +158,81 @@ function SuperAdminDashboard() {
     } catch (err) {
       addToast(err.response?.data?.message || "Save failed.", "error");
     } finally { setSavingModule(null); }
+  };
+
+  // ADDED: TGC subject management
+  useEffect(() => {
+    if (activeKey !== "tgc-subjects") return;
+    const load = async () => {
+      try {
+        setTgcSubjLoading(true);
+        const [subRes, staffRes] = await Promise.all([API.get("/api/subjects"), API.get("/api/modules/staff")]);
+        setTgcSubjects(subRes.data.subjects || []);
+        setStaff(prev => staffRes.data.data || prev);
+      } catch { addToast("Could not load TGC subjects.", "warning"); }
+      finally { setTgcSubjLoading(false); }
+    };
+    load();
+  }, [activeKey, addToast]);
+
+  // ADDED: TGC overview/analytics
+  useEffect(() => {
+    if (activeKey !== "tgc-overview") return;
+    const load = async () => {
+      try {
+        setTgcLoading(true);
+        const [analRes, stuRes] = await Promise.allSettled([
+          API.get("/api/analytics/term-grant"),
+          API.get("/api/certificate/all-students"),
+        ]);
+        if (analRes.status === "fulfilled") setTgcAnalytics(analRes.value.data);
+        if (stuRes.status  === "fulfilled") setTgcStudents(stuRes.value.data.students || []);
+      } catch { addToast("Could not load TGC analytics.", "warning"); }
+      finally { setTgcLoading(false); }
+    };
+    load();
+  }, [activeKey, addToast]);
+
+  const handleCreateTGCSubject = async (e) => {
+    e.preventDefault();
+    if (!tgcSubjForm.name.trim() || !tgcSubjForm.code.trim()) {
+      addToast("Name and code are required.", "error"); return;
+    }
+    try {
+      setSavingSubj(true);
+      await API.post("/api/subjects/create", { ...tgcSubjForm, is_tgc: true });
+      addToast("Subject created.", "success");
+      setTgcSubjForm({ name: "", code: "", subject_type: "TH", tgc_semester: 6, tgc_year: "TY", academic_year: "2025-26" });
+      const res = await API.get("/api/subjects");
+      setTgcSubjects(res.data.subjects || []);
+    } catch (err) {
+      addToast(err.response?.data?.message || "Failed to create subject.", "error");
+    } finally { setSavingSubj(false); }
+  };
+
+  const handleDeleteTGCSubject = async (id) => {
+    if (!window.confirm("Delete this subject? This cannot be undone.")) return;
+    try {
+      await API.delete(`/api/subjects/${id}`);
+      setTgcSubjects(prev => prev.filter(s => s.id !== id));
+      addToast("Subject deleted.", "info");
+    } catch (err) {
+      addToast(err.response?.data?.message || "Failed to delete.", "error");
+    }
+  };
+
+  const handleAssignTeacher = async (subjectId) => {
+    const teacherId = assignTeacherMap[subjectId];
+    if (!teacherId) { addToast("Select a teacher first.", "error"); return; }
+    try {
+      setSavingAssign(subjectId);
+      await API.post(`/api/subjects/${subjectId}/assign-teacher`, { teacher_id: teacherId });
+      addToast("Teacher assigned.", "success");
+      const res = await API.get("/api/subjects");
+      setTgcSubjects(res.data.subjects || []);
+    } catch (err) {
+      addToast(err.response?.data?.message || "Failed to assign.", "error");
+    } finally { setSavingAssign(null); }
   };
 
   const validateForm = (f) => {
@@ -450,6 +547,286 @@ function SuperAdminDashboard() {
                       );
                     })}
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* ADDED: TGC SUBJECT MANAGEMENT ───────────────────────── */}
+            {activeKey === "tgc-subjects" && (
+              <div className="space-y-5">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 text-white">
+                  <h1 className="text-2xl font-bold">TGC Subject Management</h1>
+                  <p className="text-blue-100 text-sm mt-1">Manage TY Semester 6 subjects and assign teachers.</p>
+                </div>
+
+                {/* Create Subject Form */}
+                <div className="bg-white rounded-xl border border-slate-200 p-5">
+                  <h3 className="text-sm font-bold text-slate-800 mb-4">Add New TGC Subject</h3>
+                  <form onSubmit={handleCreateTGCSubject} className="flex flex-wrap gap-3 items-end">
+                    <div className="flex-1 min-w-40">
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Subject Name *</label>
+                      <input
+                        type="text"
+                        value={tgcSubjForm.name}
+                        onChange={e => setTgcSubjForm(f => ({ ...f, name: e.target.value }))}
+                        placeholder="e.g. IoT Technology"
+                        className={inputClass}
+                      />
+                    </div>
+                    <div className="w-36">
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Code *</label>
+                      <input
+                        type="text"
+                        value={tgcSubjForm.code}
+                        onChange={e => setTgcSubjForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
+                        placeholder="IOT-TH"
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Type</label>
+                      <select
+                        value={tgcSubjForm.subject_type}
+                        onChange={e => setTgcSubjForm(f => ({ ...f, subject_type: e.target.value }))}
+                        className={inputClass}
+                      >
+                        {TGC_ITEM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                      </select>
+                    </div>
+                    <div className="w-28">
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Semester</label>
+                      <input
+                        type="number"
+                        min={1} max={8}
+                        value={tgcSubjForm.tgc_semester}
+                        onChange={e => setTgcSubjForm(f => ({ ...f, tgc_semester: parseInt(e.target.value) || 6 }))}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Acad. Year</label>
+                      <input
+                        type="text"
+                        value={tgcSubjForm.academic_year}
+                        onChange={e => setTgcSubjForm(f => ({ ...f, academic_year: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={savingSubj}
+                      className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                    >
+                      {savingSubj ? "Adding…" : "+ Add Subject"}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Subjects List */}
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                  {tgcSubjLoading ? (
+                    <div className="p-6 space-y-3">{[1,2,3].map(i=><div key={i} className="h-12 bg-slate-100 rounded-lg animate-pulse"/>)}</div>
+                  ) : tgcSubjects.length === 0 ? (
+                    <EmptyState title="No TGC subjects" desc="Add subjects using the form above." />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                          <tr>
+                            <th className="px-5 py-3 text-left">Subject</th>
+                            <th className="px-4 py-3 text-left">Code</th>
+                            <th className="px-4 py-3 text-left">Type</th>
+                            <th className="px-4 py-3 text-left">Teachers Assigned</th>
+                            <th className="px-4 py-3 text-left">Assign Teacher</th>
+                            <th className="px-4 py-3" />
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {tgcSubjects.map(sub => (
+                            <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="px-5 py-3 font-medium text-slate-900">{sub.name || sub.subject_name}</td>
+                              <td className="px-4 py-3 text-slate-500 font-mono text-xs">{sub.code || sub.subject_code}</td>
+                              <td className="px-4 py-3">
+                                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                                  {sub.subject_type || sub.type || "—"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                {(sub.teachers || []).length === 0 ? (
+                                  <span className="text-xs text-slate-400">None</span>
+                                ) : (
+                                  <div className="flex flex-wrap gap-1">
+                                    {(sub.teachers || []).map(t => (
+                                      <span key={t.id} className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">{t.name}</span>
+                                    ))}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex gap-2 items-center">
+                                  <select
+                                    value={assignTeacherMap[sub.id] || ""}
+                                    onChange={e => setAssignTeacherMap(m => ({ ...m, [sub.id]: e.target.value }))}
+                                    className="px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[140px]"
+                                  >
+                                    <option value="">Select teacher…</option>
+                                    {staff.filter(s => s.role === "teacher").map(t => (
+                                      <option key={t.id} value={t.id}>{t.name}</option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    disabled={savingAssign === sub.id || !assignTeacherMap[sub.id]}
+                                    onClick={() => handleAssignTeacher(sub.id)}
+                                    className="px-2.5 py-1.5 text-xs font-semibold bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white rounded-lg transition-colors"
+                                  >
+                                    {savingAssign === sub.id ? "…" : "Assign"}
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteTGCSubject(sub.id)}
+                                  className="px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ADDED: TGC OVERVIEW / ANALYTICS ─────────────────────── */}
+            {activeKey === "tgc-overview" && (
+              <div className="space-y-5">
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white">
+                  <h1 className="text-2xl font-bold">TGC Overview — Sem 6 (2025-26)</h1>
+                  <p className="text-emerald-100 text-sm mt-1">Term Grant Certificate analytics and student status.</p>
+                </div>
+
+                {tgcLoading ? (
+                  <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-16 bg-slate-100 rounded-xl animate-pulse" />)}</div>
+                ) : (
+                  <>
+                    {/* Analytics Cards */}
+                    {tgcAnalytics && (
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[
+                          { label: "Total Students", value: tgcAnalytics.total_students ?? "—", color: "blue",  icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
+                          { label: "Fully Approved",  value: tgcAnalytics.fully_approved  ?? "—", color: "green", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
+                          { label: "Pending",         value: tgcAnalytics.pending         ?? "—", color: "amber", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
+                          { label: "Rejected",        value: tgcAnalytics.rejected        ?? "—", color: "red",   icon: "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" },
+                        ].map(c => <StatCard key={c.label} {...c} />)}
+                      </div>
+                    )}
+
+                    {/* Subject-wise breakdown */}
+                    {tgcAnalytics?.subject_wise?.length > 0 && (
+                      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-100">
+                          <h3 className="text-sm font-bold text-slate-800">Subject-wise Approval Rates</h3>
+                        </div>
+                        <div className="divide-y divide-slate-50">
+                          {tgcAnalytics.subject_wise.map(s => {
+                            const pct = s.total > 0 ? Math.round((s.approved / s.total) * 100) : 0;
+                            return (
+                              <div key={s.subject_id} className="px-5 py-3 flex items-center gap-4">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-slate-800 truncate">{s.subject_name}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[200px]">
+                                      <div className="h-full bg-green-500 rounded-full" style={{ width: `${pct}%` }} />
+                                    </div>
+                                    <span className="text-xs text-slate-500 shrink-0">{s.approved}/{s.total} ({pct}%)</span>
+                                  </div>
+                                </div>
+                                <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full shrink-0">
+                                  {s.subject_type || "—"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Students Table */}
+                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                      <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3">
+                        <h3 className="text-sm font-bold text-slate-800">All Students — TGC Status</h3>
+                        <div className="relative">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          <input
+                            type="text"
+                            value={tgcSearchQuery}
+                            onChange={e => setTgcSearchQuery(e.target.value)}
+                            placeholder="Search…"
+                            className="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 w-48"
+                          />
+                        </div>
+                      </div>
+                      {tgcStudents.length === 0 ? (
+                        <EmptyState title="No student data" desc="No TGC certificate requests yet." />
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead className="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                              <tr>
+                                <th className="px-5 py-3 text-left">Student</th>
+                                <th className="px-4 py-3 text-center">Semester</th>
+                                <th className="px-4 py-3 text-center">Approved</th>
+                                <th className="px-4 py-3 text-center">Certificate Status</th>
+                                <th className="px-4 py-3 text-center">Fee</th>
+                                <th className="px-4 py-3 text-center">Survey</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                              {tgcStudents
+                                .filter(s => !tgcSearchQuery || (s.name || s.student_name || "").toLowerCase().includes(tgcSearchQuery.toLowerCase()) || (s.email || "").toLowerCase().includes(tgcSearchQuery.toLowerCase()))
+                                .map(s => {
+                                  const status = s.overall_status || s.certificate_status || "pending";
+                                  const statusCls = status === "approved" ? "bg-green-100 text-green-700" : status === "rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700";
+                                  return (
+                                    <tr key={s.student_id || s.id} className="hover:bg-slate-50/50">
+                                      <td className="px-5 py-3">
+                                        <p className="font-semibold text-slate-900">{s.name || s.student_name}</p>
+                                        <p className="text-xs text-slate-400">{s.email} · {s.roll_number}</p>
+                                      </td>
+                                      <td className="px-4 py-3 text-center text-slate-600">{s.semester || 6}</td>
+                                      <td className="px-4 py-3 text-center font-semibold text-slate-700">
+                                        {s.approved_count ?? "—"}/{s.total_subjects ?? "—"}
+                                      </td>
+                                      <td className="px-4 py-3 text-center">
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusCls}`}>{status}</span>
+                                      </td>
+                                      <td className="px-4 py-3 text-center">
+                                        <span className={s.fee_cleared ? "text-green-600 font-semibold" : "text-red-500"}>
+                                          {s.fee_cleared ? "✓" : "✗"}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-3 text-center">
+                                        <span className={s.survey_completed ? "text-green-600 font-semibold" : "text-red-500"}>
+                                          {s.survey_completed ? "✓" : "✗"}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             )}

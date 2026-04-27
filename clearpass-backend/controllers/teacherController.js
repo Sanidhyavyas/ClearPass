@@ -63,7 +63,7 @@ const getRequests = async (req, res, next) => {
     const countParams = [...params];
 
     const { rows: [countRow] } = await db.query(
-      `SELECT COUNT(*) AS total FROM clearance_requests cr ${where}`,
+      `SELECT COUNT(*) AS total FROM clearance_requests cr LEFT JOIN users u ON u.id = cr.student_id ${where}`,
       countParams
     );
     const total = Number(countRow.total);
@@ -113,7 +113,7 @@ const getRequests = async (req, res, next) => {
 
     // Status breakdown for stat cards
     const { rows: statusRows } = await db.query(
-      `SELECT status, COUNT(*) AS cnt FROM clearance_requests cr ${where} GROUP BY status`,
+      `SELECT status, COUNT(*) AS cnt FROM clearance_requests cr LEFT JOIN users u ON u.id = cr.student_id ${where} GROUP BY status`,
       countParams
     );
     const counts = { pending: 0, approved: 0, rejected: 0 };
@@ -339,14 +339,22 @@ const getStats = async (req, res, next) => {
       params
     );
 
+    // Count actual students in the same department scope
+    const deptClauseUsers = role === "teacher" ? "AND department = $1" : "";
+    const { rows: [stuRow] } = await db.query(
+      `SELECT COUNT(*) AS total_students FROM users WHERE role = 'student' ${deptClauseUsers}`,
+      params
+    );
+
     return res.json({
       success: true,
       data: {
-        total:    Number(row.total    || 0),
-        pending:  Number(row.pending  || 0),
-        approved: Number(row.approved || 0),
-        rejected: Number(row.rejected || 0),
-        overdue:  Number(row.overdue  || 0),
+        total:          Number(row.total    || 0),
+        pending:        Number(row.pending  || 0),
+        approved:       Number(row.approved || 0),
+        rejected:       Number(row.rejected || 0),
+        overdue:        Number(row.overdue  || 0),
+        total_students: Number(stuRow.total_students || 0),
       },
       message: "Stats fetched",
     });

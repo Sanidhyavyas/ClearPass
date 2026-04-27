@@ -28,6 +28,7 @@ const TIMELINE_DOT = {
 };
 
 const navItems = [
+  { key: "term-grant", label: "Term Grant",  caption: "Certificate status" }, // ADDED: primary TGC tab
   { key: "overview",   label: "Overview",   caption: "Your clearance status" },
   { key: "documents",  label: "Documents",  caption: "Upload supporting files" },
   { key: "history",    label: "History",    caption: "Application timeline"   },
@@ -74,7 +75,7 @@ function ModuleCard({ mod }) {
 export default function StudentDashboard() {
   const { addToast } = useToast();
 
-  const [activeKey, setActiveKey] = useState("overview");
+  const [activeKey, setActiveKey] = useState("term-grant"); // CHANGED: default to TGC tab
   const [loading, setLoading]     = useState(true);
   const [status, setStatus]       = useState(null);
   const [history, setHistory]     = useState([]);
@@ -84,12 +85,28 @@ export default function StudentDashboard() {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef(null);
   const prevStatusRef = useRef(null);
+  // ADDED: TGC state
+  const [tgcData, setTgcData]             = useState(null);
+  const [tgcLoading, setTgcLoading]       = useState(false);
+  const [tgcRequesting, setTgcRequesting] = useState(false);
+  const [expandedSubjects, setExpandedSubjects] = useState({});
 
   const loadProfile = useCallback(async () => { // ADDED
     try {
       const res = await API.get("/api/student/profile");
       setProfile(res.data.data);
     } catch { /* silent */ }
+  }, []);
+
+  // ADDED: load TGC certificate status
+  const loadTGC = useCallback(async () => {
+    try {
+      setTgcLoading(true);
+      const res = await API.get("/api/certificate/my-status");
+      setTgcData(res.data);
+    } catch { /* silent */ } finally {
+      setTgcLoading(false);
+    }
   }, []);
 
   const loadStatus = useCallback(async () => {
@@ -117,11 +134,11 @@ export default function StudentDashboard() {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([loadStatus(), loadHistory(), loadDocuments(), loadProfile()]); // ADDED: loadProfile
+      await Promise.all([loadStatus(), loadHistory(), loadDocuments(), loadProfile(), loadTGC()]); // ADDED: loadTGC
       setLoading(false);
     };
     init();
-  }, [loadStatus, loadHistory, loadDocuments, loadProfile]); // ADDED: loadProfile dep
+  }, [loadStatus, loadHistory, loadDocuments, loadProfile, loadTGC]); // ADDED: loadTGC dep
 
   // Poll every 15s for status changes and toast if something changed
   useEffect(() => {
@@ -199,6 +216,38 @@ export default function StudentDashboard() {
     }
   };
 
+  // ADDED: TGC request handler
+  const handleRequestTGC = async () => {
+    try {
+      setTgcRequesting(true);
+      await API.post("/api/certificate/request", { semester: 6, academic_year: "2025-26" });
+      addToast("Certificate request submitted!", "success");
+      loadTGC();
+    } catch (err) {
+      addToast(err.response?.data?.message || "Failed to submit request.", "error");
+    } finally {
+      setTgcRequesting(false);
+    }
+  };
+
+  // ADDED: download TGC PDF
+  const handleDownloadTGC = async () => {
+    try {
+      const studentId = profile?.id || "me";
+      const res = await API.get(`/api/certificate/${studentId}/download`, { responseType: "blob" });
+      const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+      const a   = document.createElement("a");
+      a.href     = url;
+      a.download = "Term_Grant_Certificate.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      addToast(err.response?.data?.message || "Certificate not ready for download.", "error");
+    }
+  };
+
   const MODULE_NAMES = ["library", "accounts", "hostel", "department"];
   const allModules = MODULE_NAMES.map((name) => {
     const found = status?.modules?.find((m) => m.module_name === name);
@@ -228,6 +277,212 @@ export default function StudentDashboard() {
         </div>
       ) : (
         <>
+          {/* ── TERM GRANT CERTIFICATE ─────────────────────────────── */}
+          {activeKey === "term-grant" && (
+            <div className="space-y-5">
+
+              {/* Student Info Card */}
+              <div className="bg-gradient-to-br from-blue-700 to-indigo-800 rounded-2xl p-5 text-white shadow-lg">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-xl">
+                      {(profile?.name || "S").charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-bold text-lg leading-tight">{profile?.name || "—"}</p>
+                      <p className="text-blue-200 text-sm">{profile?.email || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 flex-wrap">
+                    {[
+                      ["Year",       "TY | Sem 6"],
+                      ["AY",         "2025-26"],
+                      ["Roll No.",   profile?.roll_number  || "—"],
+                      ["Student ID", profile?.student_code || "—"],
+                    ].map(([label, val]) => (
+                      <div key={label} className="bg-white/15 rounded-xl px-3 py-2 text-center min-w-[70px]">
+                        <p className="text-[10px] text-blue-200 uppercase tracking-wide font-medium">{label}</p>
+                        <p className="text-sm font-bold mt-0.5">{val}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {tgcLoading ? (
+                <div className="space-y-3">
+                  {[1,2,3].map(i => <div key={i} className="bg-white rounded-xl h-16 animate-pulse" />)}
+                </div>
+              ) : !tgcData?.certificate ? (
+                /* No request yet */
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
+                  <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-base font-semibold text-gray-800">Term Grant Certificate</h3>
+                  <p className="text-sm text-gray-500 mt-1 mb-5">Submit your request to start the TGC clearance process for Semester 6.</p>
+                  <button
+                    type="button"
+                    onClick={handleRequestTGC}
+                    disabled={tgcRequesting}
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold text-sm rounded-xl transition-colors"
+                  >
+                    {tgcRequesting ? "Submitting…" : "Request Term Grant Certificate"}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Overall Status Banner */}
+                  {(() => {
+                    const cert  = tgcData.certificate;
+                    const total = tgcData.total_count || 0;
+                    const appr  = tgcData.approved_count || 0;
+                    const pct   = total > 0 ? Math.round((appr / total) * 100) : 0;
+                    const statusCfg = {
+                      approved: { bg: "bg-green-50 border-green-200", bar: "bg-green-500",  pill: "bg-green-100 text-green-800",  label: "All Approved ✓" },
+                      rejected: { bg: "bg-red-50 border-red-200",     bar: "bg-red-500",    pill: "bg-red-100 text-red-700",      label: "Rejected" },
+                      pending:  { bg: "bg-amber-50 border-amber-200", bar: "bg-blue-500",   pill: "bg-amber-100 text-amber-800",  label: "In Progress" },
+                    };
+                    const cfg = statusCfg[cert.overall_status] || statusCfg.pending;
+                    return (
+                      <div className={`rounded-2xl border p-5 ${cfg.bg}`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="text-sm font-bold text-gray-800 uppercase tracking-wide">Term Grant Certificate</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Semester {cert.semester} · {cert.academic_year}</p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${cfg.pill}`}>{cfg.label}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-gray-600 mb-1.5">
+                          <span>{appr}/{total} subjects approved</span>
+                          <span className="font-bold">{pct}%</span>
+                        </div>
+                        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all duration-700 ${cfg.bar}`} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Subject-wise Status */}
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="px-5 py-4 border-b border-gray-50">
+                      <h3 className="text-sm font-bold text-gray-800">Subject-wise Approval Status</h3>
+                    </div>
+                    <div className="divide-y divide-gray-50">
+                      {(tgcData.subjects || []).map((sub, idx) => {
+                        const isExpanded = expandedSubjects[sub.subject_id];
+                        const statusIcon = { approved: "✅", pending: "🟡", rejected: "🔴" };
+                        const statusBg   = { approved: "bg-green-50 text-green-700", pending: "bg-amber-50 text-amber-700", rejected: "bg-red-50 text-red-700" };
+                        return (
+                          <div key={sub.subject_id} className="px-5">
+                            <button
+                              type="button"
+                              className="w-full flex items-center justify-between py-3.5 text-left group"
+                              onClick={() => setExpandedSubjects(prev => ({ ...prev, [sub.subject_id]: !prev[sub.subject_id] }))}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-sm text-gray-500 w-6 shrink-0">{idx + 1}.</span>
+                                <div className="min-w-0">
+                                  <span className="text-sm font-semibold text-gray-900 truncate block">
+                                    {sub.subject_name}
+                                    {sub.type && <span className="ml-1 text-xs font-normal text-gray-400">({sub.type})</span>}
+                                  </span>
+                                  {sub.teacher_name && (
+                                    <span className="text-xs text-gray-400">Teacher: {sub.teacher_name}</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0 ml-2">
+                                <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${statusBg[sub.status] || statusBg.pending}`}>
+                                  {statusIcon[sub.status] || "🟡"} {sub.status || "pending"}
+                                </span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </div>
+                            </button>
+
+                            {isExpanded && (
+                              <div className="pb-4 pl-8 space-y-1.5">
+                                {sub.remarks && sub.status === "rejected" && (
+                                  <p className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg mb-2">
+                                    Remark: {sub.remarks}
+                                  </p>
+                                )}
+                                {(sub.checklist || []).length === 0 ? (
+                                  <p className="text-xs text-gray-400 italic">No checklist items yet.</p>
+                                ) : (
+                                  <div className="grid grid-cols-2 gap-1.5">
+                                    {(sub.checklist || []).map((item) => (
+                                      <div key={item.id} className="flex items-center gap-1.5 text-xs text-gray-600">
+                                        <span className={item.status === "completed" ? "text-green-500" : item.status === "waived" ? "text-gray-400" : "text-red-400"}>
+                                          {item.status === "completed" ? "✅" : item.status === "waived" ? "⬜" : "❌"}
+                                        </span>
+                                        <span className="truncate">{item.item_name}</span>
+                                        {item.item_type && item.item_type !== "Custom" && (
+                                          <span className="text-gray-300 text-[10px]">[{item.item_type}]</span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {sub.mini_project_status && (
+                                  <p className="text-xs text-indigo-600 mt-1">Mini Project: {sub.mini_project_status}</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Fee + Survey Status */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { label: "Fee Cleared",           val: tgcData.certificate?.fee_cleared,       yes: "Cleared ✅",    no: "Pending ❌" },
+                      { label: "MIT ADTU Survey",        val: tgcData.certificate?.survey_completed,  yes: "Completed ✅",  no: "Pending ❌" },
+                    ].map(({ label, val, yes, no }) => (
+                      <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">{label}</p>
+                        <p className={`text-sm font-bold ${val ? "text-green-700" : "text-red-600"}`}>
+                          {val ? yes : no}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Download Button */}
+                  <div className={`rounded-xl border p-5 flex items-center justify-between gap-4 ${
+                    tgcData.certificate?.overall_status === "approved"
+                      ? "bg-green-50 border-green-200"
+                      : "bg-gray-50 border-gray-200"
+                  }`}>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">Term Grant Certificate PDF</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {tgcData.certificate?.overall_status === "approved"
+                          ? "All subjects approved! Your certificate is ready."
+                          : `Waiting for ${(tgcData.total_count || 0) - (tgcData.approved_count || 0)} more subject(s) to be approved.`}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={tgcData.certificate?.overall_status !== "approved"}
+                      onClick={handleDownloadTGC}
+                      className="shrink-0 px-5 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-colors"
+                    >
+                      📄 Download Certificate
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* ── OVERVIEW ───────────────────────────────────────────── */}
           {activeKey === "overview" && (
             <div className="space-y-6">
