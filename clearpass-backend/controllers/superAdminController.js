@@ -115,6 +115,113 @@ const getSuperAdminOverview = async (req, res, next) => {
   }
 };
 
+// ── PATCH /api/super-admin/users/:userId/approve-clearance ───────────────
+const approveStudentClearance = async (req, res, next) => {
+  try {
+    const userId = Number(req.params.userId);
+
+    // Verify the user is actually a student
+    const { rows: userRows } = await db.query(
+      "SELECT id, name, role, department, roll_number, semester, year FROM users WHERE id = $1 LIMIT 1",
+      [userId]
+    );
+    if (!userRows.length) return res.status(404).json({ message: "User not found" });
+    if (userRows[0].role !== "student") return res.status(400).json({ message: "User is not a student" });
+    const student = userRows[0];
+
+    // Find the most recent clearance request for this student (any status)
+    const { rows } = await db.query(
+      "SELECT id, status FROM clearance_requests WHERE student_id = $1 ORDER BY created_at DESC LIMIT 1",
+      [userId]
+    );
+
+    let requestId;
+
+    if (rows.length === 0) {
+      // No clearance request exists — create one and immediately approve it
+      const { rows: [newReq] } = await db.query(
+        `INSERT INTO clearance_requests
+           (student_id, student_name, department, roll_number, semester, year,
+            status, current_stage, approved_at, submitted_at, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6,
+                 'approved', 'completed', NOW(), NOW(), NOW(), NOW())
+         RETURNING id`,
+        [
+          userId,
+          student.name || null,
+          student.department || null,
+          student.roll_number || null,
+          student.semester || null,
+          student.year || null,
+        ]
+      );
+      requestId = newReq.id;
+    } else if (rows[0].status === "approved") {
+      return res.json({ message: "Student clearance is already approved" });
+    } else {
+      // Existing pending/rejected request — approve it
+      requestId = rows[0].id;
+      await db.query(
+        `UPDATE clearance_requests
+           SET status = 'approved', current_stage = 'completed',
+               approved_at = NOW(), updated_at = NOW()
+         WHERE id = $1`,
+        [requestId]
+      );
+    }
+
+    await createAuditLog({
+      userId:     req.user.id,
+      userName:   req.user.name || "Super Admin",
+      userRole:   "super_admin",
+      action:     "approved",
+      targetType: "clearance_request",
+      targetId:   requestId,
+      details:    `Clearance for student #${userId} (${student.name}) approved by Super Admin via user management`,
+    });
+
+    // ── Also mark the TGC certificate as fully approved (all subjects) ──
+    const DEFAULT_SEM = 6;
+    const DEFAULT_AY  = "2025-26";
+
+    const { rows: [cert] } = await db.query(
+      `INSERT INTO term_grant_certificates
+         (student_id, semester, academic_year, overall_status)
+       VALUES ($1, $2, $3, 'approved')
+       ON CONFLICT (student_id, semester, academic_year)
+         DO UPDATE SET overall_status = 'approved'
+       RETURNING id`,
+      [userId, DEFAULT_SEM, DEFAULT_AY]
+    );
+
+    const { rows: tgcSubjects } = await db.query(
+      "SELECT id FROM subjects WHERE is_tgc = TRUE AND tgc_semester = $1 AND academic_year = $2",
+      [DEFAULT_SEM, DEFAULT_AY]
+    );
+
+    for (const subj of tgcSubjects) {
+      const { rows: teachers } = await db.query(
+        "SELECT teacher_id FROM subject_teacher_assignments WHERE subject_id = $1 LIMIT 1",
+        [subj.id]
+      );
+      const teacherId = teachers.length > 0 ? teachers[0].teacher_id : null;
+
+      await db.query(
+        `INSERT INTO subject_approvals
+           (certificate_id, student_id, subject_id, teacher_id, status, approved_at)
+         VALUES ($1, $2, $3, $4, 'approved', NOW())
+         ON CONFLICT (certificate_id, subject_id)
+           DO UPDATE SET status = 'approved', approved_at = NOW()`,
+        [cert.id, userId, subj.id, teacherId]
+      );
+    }
+
+    return res.json({ message: "Student clearance approved" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 // ── GET /api/super-admin/clearance-requests ───────────────────────────────
 const getClearanceRequests = async (req, res, next) => {
   try {
@@ -190,6 +297,7 @@ const superAdminApproveClearance = async (req, res, next) => {
 };
 
 module.exports = {
+  approveStudentClearance,
   getClearanceRequests,
   getSuperAdminOverview,
   getSuperAdminProfile,

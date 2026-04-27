@@ -200,15 +200,30 @@ const getSubjectsBySemester = async (req, res, next) => {
  * DELETE /api/subjects/:id
  */
 const deleteTGCSubject = async (req, res, next) => {
+  const client = await db.connect();
   try {
     const { id } = req.params;
-    const { rows } = await db.query(
-      "DELETE FROM subjects WHERE id = $1 AND is_tgc = TRUE RETURNING id", [id]
+    const { rows: subRows } = await client.query(
+      "SELECT id FROM subjects WHERE id = $1 AND is_tgc = TRUE LIMIT 1", [id]
     );
-    if (rows.length === 0) return res.status(404).json({ message: "TGC subject not found" });
+    if (subRows.length === 0) return res.status(404).json({ message: "TGC subject not found" });
+
+    await client.query("BEGIN");
+
+    // Remove rows with no ON DELETE CASCADE before deleting the subject
+    await client.query("DELETE FROM student_checklist_progress WHERE subject_id = $1", [id]);
+    await client.query("DELETE FROM subject_approvals WHERE subject_id = $1", [id]);
+
+    // subject_teacher_assignments and checklist_templates already have ON DELETE CASCADE
+    await client.query("DELETE FROM subjects WHERE id = $1", [id]);
+
+    await client.query("COMMIT");
     return res.json({ message: "Subject deleted" });
   } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
     return next(err);
+  } finally {
+    client.release();
   }
 };
 
@@ -748,6 +763,12 @@ const generateTGCPDF = async (req, res, next) => {
       return res.status(400).json({
         message: "Certificate not fully approved yet",
         overall_status: cert.overall_status,
+      });
+    }
+    if (!cert.fee_cleared) {
+      return res.status(400).json({
+        message: "Certificate download is not available until fees are cleared",
+        fee_cleared: false,
       });
     }
 

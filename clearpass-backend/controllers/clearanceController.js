@@ -223,6 +223,14 @@ const updateFeeStatus = async (req, res, next) => {
       details:    `Fee ${status} for request #${requestId} by ${req.user.name}${remarks ? `. Remarks: ${remarks}` : ""}`,
     });
 
+    // Sync fee_cleared flag on TGC certificate when fee is approved/rejected
+    await db.query(
+      `UPDATE term_grant_certificates
+         SET fee_cleared = $1
+       WHERE student_id = $2`,
+      [status === "approved", rows[0].student_id]
+    );
+
     return res.json({ message: `Fee payment ${status} successfully` });
   } catch (error) {
     return next(error);
