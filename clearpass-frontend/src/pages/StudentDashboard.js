@@ -366,79 +366,94 @@ export default function StudentDashboard() {
                     );
                   })()}
 
-                  {/* Subject-wise Status */}
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-5 py-4 border-b border-gray-50">
-                      <h3 className="text-sm font-bold text-gray-800">Subject-wise Approval Status</h3>
-                    </div>
-                    <div className="divide-y divide-gray-50">
-                      {(tgcData.subjects || []).map((sub, idx) => {
-                        const isExpanded = expandedSubjects[sub.subject_id];
-                        const statusIcon = { approved: "✅", pending: "🟡", rejected: "🔴" };
-                        const statusBg   = { approved: "bg-green-50 text-green-700", pending: "bg-amber-50 text-amber-700", rejected: "bg-red-50 text-red-700" };
-                        return (
-                          <div key={sub.subject_id} className="px-5">
-                            <button
-                              type="button"
-                              className="w-full flex items-center justify-between py-3.5 text-left group"
-                              onClick={() => setExpandedSubjects(prev => ({ ...prev, [sub.subject_id]: !prev[sub.subject_id] }))}
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className="text-sm text-gray-500 w-6 shrink-0">{idx + 1}.</span>
-                                <div className="min-w-0">
-                                  <span className="text-sm font-semibold text-gray-900 truncate block">
-                                    {sub.subject_name}
-                                    {sub.type && <span className="ml-1 text-xs font-normal text-gray-400">({sub.type})</span>}
-                                  </span>
-                                  {sub.teacher_name && (
-                                    <span className="text-xs text-gray-400">Teacher: {sub.teacher_name}</span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0 ml-2">
-                                <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${statusBg[sub.status] || statusBg.pending}`}>
-                                  {statusIcon[sub.status] || "🟡"} {sub.status || "pending"}
-                                </span>
-                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                </svg>
-                              </div>
-                            </button>
-
-                            {isExpanded && (
-                              <div className="pb-4 pl-8 space-y-1.5">
-                                {sub.remarks && sub.status === "rejected" && (
-                                  <p className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg mb-2">
-                                    Remark: {sub.remarks}
-                                  </p>
-                                )}
-                                {(sub.checklist || []).length === 0 ? (
-                                  <p className="text-xs text-gray-400 italic">No checklist items yet.</p>
-                                ) : (
-                                  <div className="grid grid-cols-2 gap-1.5">
-                                    {(sub.checklist || []).map((item) => (
-                                      <div key={item.id} className="flex items-center gap-1.5 text-xs text-gray-600">
-                                        <span className={item.status === "completed" ? "text-green-500" : item.status === "waived" ? "text-gray-400" : "text-red-400"}>
-                                          {item.status === "completed" ? "✅" : item.status === "waived" ? "⬜" : "❌"}
+                  {/* Subject-wise Clearance Matrix (tabular) */}
+                  {(() => {
+                    const subjects = tgcData?.subjects || [];
+                    // Collect all unique checklist item names (in order of first appearance)
+                    const colHeaders = [];
+                    const seenCols = new Set();
+                    subjects.forEach(sub => {
+                      (sub.checklist || []).forEach(item => {
+                        if (!seenCols.has(item.item_name)) {
+                          seenCols.add(item.item_name);
+                          colHeaders.push({ name: item.item_name, type: item.item_type });
+                        }
+                      });
+                    });
+                    return (
+                      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+                          <h3 className="text-sm font-bold text-gray-800">Subject-wise Clearance Status</h3>
+                          <span className="text-xs text-gray-400">{subjects.length} subject{subjects.length !== 1 ? "s" : ""}</span>
+                        </div>
+                        {subjects.length === 0 ? (
+                          <p className="p-6 text-sm text-gray-400 text-center">No subjects found.</p>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-4 py-3 text-left text-gray-700 font-semibold sticky left-0 bg-gray-50 z-10 min-w-[150px] border-r border-gray-100">
+                                    Subject
+                                  </th>
+                                  {colHeaders.map(col => (
+                                    <th key={col.name} className="px-3 py-3 text-center text-gray-500 font-medium min-w-[90px]">
+                                      <span className="block truncate max-w-[90px]" title={col.name}>{col.name}</span>
+                                      <span className="text-gray-300 text-[9px]">[{col.type}]</span>
+                                    </th>
+                                  ))}
+                                  <th className="px-3 py-3 text-center text-gray-600 font-semibold min-w-[90px]">Teacher</th>
+                                  <th className="px-3 py-3 text-center text-gray-600 font-semibold min-w-[80px]">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-50">
+                                {subjects.map(sub => {
+                                  const itemByName = {};
+                                  (sub.checklist || []).forEach(item => { itemByName[item.item_name] = item; });
+                                  return (
+                                    <tr key={sub.subject_id} className="hover:bg-gray-50 transition-colors">
+                                      <td className="px-4 py-3 sticky left-0 bg-white z-10 border-r border-gray-100">
+                                        <p className="font-semibold text-gray-800 leading-tight">{sub.subject_name}</p>
+                                        <p className="text-gray-400 text-[10px] mt-0.5">
+                                          {sub.subject_code}{sub.type ? ` · ${sub.type}` : ""}
+                                        </p>
+                                      </td>
+                                      {colHeaders.map(col => {
+                                        const item = itemByName[col.name];
+                                        if (!item) return (
+                                          <td key={col.name} className="px-3 py-3 text-center text-gray-200 text-sm">—</td>
+                                        );
+                                        const icon = item.status === "completed" ? "✅" : item.status === "waived" ? "⬜" : "❌";
+                                        return (
+                                          <td key={col.name} className="px-3 py-3 text-center" title={`${item.item_name}: ${item.status || "pending"}`}>
+                                            <span className="text-sm leading-none">{icon}</span>
+                                          </td>
+                                        );
+                                      })}
+                                      <td className="px-3 py-3 text-center text-gray-500 font-medium text-[11px]">
+                                        {sub.teacher_name
+                                          ? <span title={sub.teacher_name}>{sub.teacher_name.split(" ").slice(0, 2).join(" ")}</span>
+                                          : "—"}
+                                      </td>
+                                      <td className="px-3 py-3 text-center">
+                                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                          sub.status === "approved" ? "bg-green-100 text-green-700"
+                                          : sub.status === "rejected" ? "bg-red-100 text-red-700"
+                                          : "bg-amber-100 text-amber-700"
+                                        }`}>
+                                          {sub.status || "pending"}
                                         </span>
-                                        <span className="truncate">{item.item_name}</span>
-                                        {item.item_type && item.item_type !== "Custom" && (
-                                          <span className="text-gray-300 text-[10px]">[{item.item_type}]</span>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                                {sub.mini_project_status && (
-                                  <p className="text-xs text-indigo-600 mt-1">Mini Project: {sub.mini_project_status}</p>
-                                )}
-                              </div>
-                            )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Fee + Survey Status */}
                   <div className="grid grid-cols-2 gap-4">
@@ -456,28 +471,43 @@ export default function StudentDashboard() {
                   </div>
 
                   {/* Download Button */}
-                  <div className={`rounded-xl border p-5 flex items-center justify-between gap-4 ${
-                    tgcData.certificate?.overall_status === "approved"
-                      ? "bg-green-50 border-green-200"
-                      : "bg-gray-50 border-gray-200"
-                  }`}>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">Term Grant Certificate PDF</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {tgcData.certificate?.overall_status === "approved"
-                          ? "All subjects approved! Your certificate is ready."
-                          : `Waiting for ${(tgcData.total_count || 0) - (tgcData.approved_count || 0)} more subject(s) to be approved.`}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={tgcData.certificate?.overall_status !== "approved"}
-                      onClick={handleDownloadTGC}
-                      className="shrink-0 px-5 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-colors"
-                    >
-                      📄 Download Certificate
-                    </button>
-                  </div>
+                  {(() => {
+                    const cert         = tgcData.certificate;
+                    const isApproved   = cert?.overall_status === "approved";
+                    const isFeeCleared = !!cert?.fee_cleared;
+                    const canDownload  = isApproved && isFeeCleared;
+
+                    let bgCls  = "bg-gray-50 border-gray-200";
+                    let msg    = "";
+                    if (!isApproved) {
+                      msg   = `Waiting for ${(tgcData.total_count || 0) - (tgcData.approved_count || 0)} more subject(s) to be approved.`;
+                    } else if (!isFeeCleared) {
+                      bgCls = "bg-amber-50 border-amber-200";
+                      msg   = "Clearance approved ✓ — waiting for fees verification to enable download.";
+                    } else {
+                      bgCls = "bg-green-50 border-green-200";
+                      msg   = "All cleared! Your certificate is ready to download.";
+                    }
+
+                    return (
+                      <div className={`rounded-xl border p-5 flex items-center justify-between gap-4 ${bgCls}`}>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">Term Grant Certificate PDF</p>
+                          <p className={`text-xs mt-0.5 ${canDownload ? "text-green-700 font-medium" : isApproved ? "text-amber-700" : "text-gray-500"}`}>
+                            {msg}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={!canDownload}
+                          onClick={handleDownloadTGC}
+                          className="shrink-0 px-5 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-colors"
+                        >
+                          📄 Download Certificate
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </>
               )}
             </div>

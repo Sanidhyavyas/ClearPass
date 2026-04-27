@@ -218,8 +218,9 @@ function TeacherDashboard() {
   const [editingItem,      setEditingItem]       = useState(null); // {id, item_name, item_type, is_required}
   const [studentsData,     setStudentsData]      = useState(null);
   const [studentsLoading,  setStudentsLoading]   = useState(false);
-  const [approvingStudent, setApprovingStudent]  = useState(null); // {studentId, subjectId}
+  const [approvingStudent, setApprovingStudent]  = useState(null); // {studentId, subjectId, studentName}
   const [approvalForm,     setApprovalForm]      = useState({ status: "approved", remarks: "", mini_project_status: "" });
+  const [expandedStudents, setExpandedStudents]  = useState({});
 
   const ITEM_TYPES = ["Assignment","TA1","TA2","JA1","JA2","Open Assessment","Repeat TA","Remedial Task","Attendance","Exam","Custom"];
 
@@ -853,7 +854,7 @@ function TeacherDashboard() {
                   <button
                     key={sub.id}
                     type="button"
-                    onClick={() => setSelectedSubject(sub)}
+                    onClick={() => { setSelectedSubject(sub); setExpandedStudents({}); }}
                     className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors ${
                       selectedSubject?.id === sub.id
                         ? "bg-blue-600 text-white"
@@ -868,99 +869,188 @@ function TeacherDashboard() {
             </div>
 
             {selectedSubject && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-gray-800">
-                    Students — {selectedSubject.name || selectedSubject.subject_name}
-                  </h3>
-                  {studentsLoading && <span className="text-xs text-gray-400 animate-pulse">Loading…</span>}
+              <>
+                {/* ── Subject Detail Card ─────────────────────────── */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-4">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="text-base font-bold text-gray-900">{selectedSubject.name || selectedSubject.subject_name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {selectedSubject.subject_code}
+                        {selectedSubject.type     ? ` · ${selectedSubject.type}`     : ""}
+                        {selectedSubject.semester ? ` · Sem ${selectedSubject.semester}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex gap-3 flex-wrap">
+                      {[
+                        ["Semester", selectedSubject.semester     ?? "—"],
+                        ["Type",     selectedSubject.type         || "—"],
+                        ["Items",    selectedSubject.checklist_count ?? "—"],
+                      ].map(([label, val]) => (
+                        <div key={label} className="bg-white/80 rounded-xl px-3 py-2 text-center min-w-[64px]">
+                          <p className="text-[10px] text-blue-500 uppercase tracking-wide font-medium">{label}</p>
+                          <p className="text-sm font-bold text-gray-800 mt-0.5">{val}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Checklist item tags */}
+                  {studentsData?.items && studentsData.items.length > 0 && (
+                    <div className="mt-3 flex gap-1.5 flex-wrap">
+                      {studentsData.items.map(item => (
+                        <span key={item.id} className="inline-flex items-center gap-1 bg-white/80 text-gray-600 text-[10px] font-medium px-2 py-0.5 rounded-full border border-blue-100">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
+                          {item.item_name}
+                          {item.is_required && <span className="text-blue-400">*</span>}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {!studentsData || (studentsData.students || []).length === 0 ? (
-                  <div className="p-8 text-center text-sm text-gray-400">No students have requested certificates yet.</div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        <tr>
-                          <th className="px-5 py-3 text-left">Student</th>
-                          <th className="px-4 py-3 text-center">Checklist</th>
-                          <th className="px-4 py-3 text-center">Status</th>
-                          <th className="px-4 py-3 text-center">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {(studentsData.students || []).map(stu => {
-                          const completed = (stu.checklist || []).filter(c => c.status === "completed").length;
-                          const total     = (stu.checklist || []).length;
-                          const approvalStatus = stu.subject_approval_status;
-                          return (
-                            <tr key={stu.student_id} className="hover:bg-gray-50 transition-colors">
-                              <td className="px-5 py-4">
-                                <p className="font-semibold text-gray-900">{stu.student_name}</p>
-                                <p className="text-xs text-gray-400">{stu.roll_number} · {stu.email}</p>
-                              </td>
-                              <td className="px-4 py-4">
-                                <div className="flex flex-col items-center gap-1">
-                                  <span className="text-xs font-semibold text-gray-700">{completed}/{total}</span>
-                                  <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                    <div
-                                      className="h-full bg-blue-500 rounded-full transition-all"
-                                      style={{ width: total > 0 ? `${Math.round((completed/total)*100)}%` : "0%" }}
-                                    />
-                                  </div>
-                                  <div className="flex gap-0.5 flex-wrap justify-center max-w-[120px]">
+                {/* ── Students List ────────────────────────────────── */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-gray-800">
+                      Students — {selectedSubject.name || selectedSubject.subject_name}
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      {studentsLoading && <span className="text-xs text-gray-400 animate-pulse">Loading…</span>}
+                      {studentsData?.students?.length > 0 && (
+                        <span className="text-xs text-gray-400">{studentsData.students.length} student{studentsData.students.length !== 1 ? "s" : ""}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {!studentsData || (studentsData.students || []).length === 0 ? (
+                    <div className="p-10 text-center">
+                      <p className="text-sm text-gray-400">No students have requested certificates yet.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-50">
+                      {(studentsData.students || []).map(stu => {
+                        const completed      = (stu.checklist || []).filter(c => c.status === "completed").length;
+                        const total          = (stu.checklist || []).length;
+                        const pct            = total > 0 ? Math.round((completed / total) * 100) : 0;
+                        const approvalStatus = stu.subject_approval_status;
+                        const isExpanded     = expandedStudents[stu.student_id];
+                        return (
+                          <div key={stu.student_id}>
+                            {/* ── Summary row ── */}
+                            <div className="px-5 py-4 flex items-center gap-3 hover:bg-gray-50 transition-colors">
+                              {/* Expand chevron */}
+                              <button
+                                type="button"
+                                onClick={() => setExpandedStudents(prev => ({ ...prev, [stu.student_id]: !prev[stu.student_id] }))}
+                                className="shrink-0 w-7 h-7 rounded-lg bg-gray-100 hover:bg-blue-50 flex items-center justify-center transition-colors"
+                                title="Expand checklist"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+
+                              {/* Student info */}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-900 text-sm leading-tight">{stu.student_name}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                  {[stu.roll_number, stu.enrollment_no, stu.division].filter(Boolean).join(" · ")}
+                                  {stu.email && <span className="ml-1">· {stu.email}</span>}
+                                </p>
+                              </div>
+
+                              {/* Progress bar */}
+                              <div className="shrink-0 w-28 hidden sm:block">
+                                <div className="flex items-center justify-between text-[10px] text-gray-500 mb-1">
+                                  <span>{completed}/{total} done</span>
+                                  <span className="font-semibold text-gray-700">{pct}%</span>
+                                </div>
+                                <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${pct === 100 ? "bg-green-500" : "bg-blue-500"}`}
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Status badge */}
+                              <span className={`shrink-0 inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                approvalStatus === "approved" ? "bg-green-100 text-green-700"
+                                : approvalStatus === "rejected" ? "bg-red-100 text-red-700"
+                                : "bg-amber-100 text-amber-700"
+                              }`}>
+                                {approvalStatus || "pending"}
+                              </span>
+
+                              {/* Review button */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setApprovingStudent({ studentId: stu.student_id, subjectId: selectedSubject.id, studentName: stu.student_name });
+                                  setApprovalForm({ status: approvalStatus || "approved", remarks: stu.approval_remarks || "", mini_project_status: stu.mini_project_status || "" });
+                                }}
+                                className="shrink-0 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                              >
+                                Review
+                              </button>
+                            </div>
+
+                            {/* ── Expanded: full checklist ── */}
+                            {isExpanded && (
+                              <div className="bg-gray-50 border-t border-gray-100 px-5 pt-3 pb-4">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">
+                                  Checklist — {stu.student_name}
+                                </p>
+                                {(stu.checklist || []).length === 0 ? (
+                                  <p className="text-xs text-gray-400 italic">No checklist items for this subject.</p>
+                                ) : (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                                     {(stu.checklist || []).map(ci => (
-                                      <button
-                                        key={ci.checklist_item_id}
-                                        type="button"
-                                        title={`${ci.item_name} — click to toggle`}
-                                        onClick={() => handleToggleProgress(stu.student_id, ci.checklist_item_id, selectedSubject.id, ci.status)}
-                                        className={`w-4 h-4 rounded text-[8px] flex items-center justify-center transition-colors ${
-                                          ci.status === "completed"
-                                            ? "bg-green-500 text-white"
-                                            : ci.status === "waived"
-                                            ? "bg-gray-300 text-gray-500"
-                                            : "bg-gray-200 text-gray-400 hover:bg-amber-200"
-                                        }`}
-                                      >
-                                        {ci.status === "completed" ? "✓" : ci.status === "waived" ? "−" : "·"}
-                                      </button>
+                                      <div key={ci.checklist_item_id} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-100 shadow-sm">
+                                        <button
+                                          type="button"
+                                          title={`Toggle: ${ci.item_name}`}
+                                          onClick={() => handleToggleProgress(stu.student_id, ci.checklist_item_id, selectedSubject.id, ci.status)}
+                                          className={`shrink-0 w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold transition-colors ${
+                                            ci.status === "completed" ? "bg-green-500 text-white"
+                                            : ci.status === "waived"  ? "bg-gray-300 text-gray-500"
+                                            : "bg-gray-200 text-gray-400 hover:bg-blue-100"
+                                          }`}
+                                        >
+                                          {ci.status === "completed" ? "✓" : ci.status === "waived" ? "−" : "○"}
+                                        </button>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-medium text-gray-700 truncate">{ci.item_name}</p>
+                                          <p className="text-[10px] text-gray-400">{ci.item_type}{ci.is_required ? " · required" : ""}</p>
+                                        </div>
+                                        <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                                          ci.status === "completed" ? "bg-green-50 text-green-700"
+                                          : ci.status === "waived"  ? "bg-gray-100 text-gray-500"
+                                          : "bg-amber-50 text-amber-700"
+                                        }`}>
+                                          {ci.status || "pending"}
+                                        </span>
+                                      </div>
                                     ))}
                                   </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4 text-center">
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                                  approvalStatus === "approved"
-                                    ? "bg-green-100 text-green-700"
-                                    : approvalStatus === "rejected"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-amber-100 text-amber-700"
-                                }`}>
-                                  {approvalStatus || "pending"}
-                                </span>
-                              </td>
-                              <td className="px-4 py-4 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setApprovingStudent({ studentId: stu.student_id, subjectId: selectedSubject.id });
-                                    setApprovalForm({ status: "approved", remarks: "", mini_project_status: "" });
-                                  }}
-                                  className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                                >
-                                  Review
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+                                )}
+                                {stu.approval_remarks && (
+                                  <p className="text-xs text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg mt-2 border border-indigo-100">
+                                    Remark: {stu.approval_remarks}
+                                  </p>
+                                )}
+                                {stu.mini_project_status && (
+                                  <p className="text-xs text-purple-600 mt-1.5">Mini Project: {stu.mini_project_status}</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         )}
@@ -990,7 +1080,9 @@ function TeacherDashboard() {
       {approvingStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-base font-bold text-gray-900 mb-4">Subject Approval Decision</h3>
+            <h3 className="text-base font-bold text-gray-900 mb-4">
+              Subject Approval{approvingStudent?.studentName ? ` — ${approvingStudent.studentName}` : " Decision"}
+            </h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Decision</label>

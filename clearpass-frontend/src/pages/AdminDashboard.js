@@ -11,6 +11,7 @@ import API from "../services/api";
 const navItems = [
   { key: "overview",   label: "Overview",        caption: "System-wide request and user stats"       },
   { key: "analytics", label: "Analytics",       caption: "Module stats and approval time charts"    },
+  { key: "fees",      label: "Fees Approval",   caption: "Approve or reject student fee payments"   },
   { key: "finalize",  label: "Finalize Queue",  caption: "Requests awaiting final admin approval"   },
   { key: "users",     label: "Users",           caption: "Browse all registered accounts"           },
   { key: "requests",  label: "All Requests",    caption: "Filter and monitor every request"         },
@@ -76,6 +77,14 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [auditLoading, setAuditLoading] = useState(false);
   const [assigningId, setAssigningId] = useState(null);
+  // Fees approval state
+  const [feesRequests, setFeesRequests] = useState([]);
+  const [feesLoading, setFeesLoading] = useState(false);
+  const [feeRemarksMap, setFeeRemarksMap] = useState({});
+  const [processingFee, setProcessingFee] = useState(null);
+  // Direct approve state (All Requests tab)
+  const [directRemarksMap, setDirectRemarksMap] = useState({});
+  const [processingDirect, setProcessingDirect] = useState(null);
   // ADDED: 3-tab user management state
   const [userTab, setUserTab] = useState("students");
   const [studentsList, setStudentsList] = useState([]);
@@ -141,6 +150,45 @@ function AdminDashboard() {
     } catch { addToast("Could not load finalize queue.", "warning"); }
   };
 
+  const loadFees = async () => {
+    try {
+      setFeesLoading(true);
+      const res = await API.get("/all-requests");
+      setFeesRequests(res.data.requests || []);
+    } catch { addToast("Could not load fee requests.", "warning"); }
+    finally { setFeesLoading(false); }
+  };
+
+  const handleFeeApproval = async (requestId, status) => {
+    const remarks = feeRemarksMap[requestId] || "";
+    if (status === "rejected" && !remarks.trim()) {
+      addToast("Please provide a reason for rejection.", "warning"); return;
+    }
+    try {
+      setProcessingFee(requestId);
+      await API.patch(`/api/clearance/${requestId}/fee`, { status, remarks });
+      addToast(`Fee payment ${status} successfully.`, status === "approved" ? "success" : "info");
+      await loadFees();
+    } catch (err) {
+      addToast(err.response?.data?.message || "Fee update failed.", "error");
+    } finally { setProcessingFee(null); }
+  };
+
+  const handleDirectApprove = async (requestId, status) => {
+    const remarks = directRemarksMap[requestId] || "";
+    if (status === "rejected" && !remarks.trim()) {
+      addToast("Please provide a rejection reason.", "warning"); return;
+    }
+    try {
+      setProcessingDirect(requestId);
+      await API.patch(`/api/clearance/${requestId}/finalize`, { status, remarks });
+      addToast(status === "approved" ? "Student fully approved." : "Request rejected.", status === "approved" ? "success" : "info");
+      await loadData();
+    } catch (err) {
+      addToast(err.response?.data?.message || "Approval failed.", "error");
+    } finally { setProcessingDirect(null); }
+  };
+
   const handleFinalize = async (requestId, status) => {
     const remarks = finalRemarks[requestId] || "";
     if (status === "rejected" && !remarks.trim()) {
@@ -164,6 +212,8 @@ function AdminDashboard() {
   useEffect(() => { if (activeKey === "analytics" && !analytics) loadAnalytics(); }, [activeKey]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (activeKey === "finalize") loadPendingFinal(); }, [activeKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (activeKey === "fees") loadFees(); }, [activeKey]);
   // ADDED: load user tab data when users section is opened or tab changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (activeKey === "users") loadUsersByTab(userTab); }, [activeKey, userTab]);
@@ -336,6 +386,100 @@ function AdminDashboard() {
                 </>
               ) : (
                 <EmptyState title="No analytics data" desc="Submit and process some requests to see stats." />
+              )}
+            </div>
+          )}
+
+          {/* FEES APPROVAL */}
+          {activeKey === "fees" && (
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 text-white">
+                <h1 className="text-2xl font-bold">Fees Approval</h1>
+                <p className="text-emerald-100 text-sm mt-1">Review and approve or reject student fee payments.</p>
+              </div>
+              {feesLoading ? (
+                <div className="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-400 text-sm animate-pulse">Loading…</div>
+              ) : feesRequests.length === 0 ? (
+                <div className="bg-white rounded-xl border border-slate-200">
+                  <EmptyState title="No clearance requests" desc="Students need to submit a clearance request first." />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {feesRequests.map((r) => {
+                    const feeStatus = r.fee_status || "pending";
+                    const feePill =
+                      feeStatus === "approved" ? "bg-green-100 text-green-700"
+                      : feeStatus === "rejected" ? "bg-red-100 text-red-700"
+                      : "bg-amber-100 text-amber-700";
+                    return (
+                      <div key={r.id} className="bg-white rounded-xl border border-slate-200 p-5">
+                        <div className="flex items-start justify-between gap-4 flex-wrap">
+                          <div>
+                            <p className="font-semibold text-slate-800">{r.student_name}</p>
+                            <p className="text-xs text-slate-500">{r.student_email} · {r.department || "—"} · {r.roll_number || "—"}</p>
+                            <p className="text-xs text-slate-400 mt-1">
+                              Sem {r.semester || "—"} · Year {r.year || "—"} · Submitted {r.created_at ? new Date(r.created_at).toLocaleDateString() : "—"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${feePill}`}>
+                              Fee: {feeStatus}
+                            </span>
+                            {r.fee_approved_at && (
+                              <span className="text-xs text-slate-400">{new Date(r.fee_approved_at).toLocaleDateString()}</span>
+                            )}
+                          </div>
+                        </div>
+                        {feeStatus === "rejected" && r.fee_remarks && (
+                          <p className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg mt-2">Reason: {r.fee_remarks}</p>
+                        )}
+                        {feeStatus !== "approved" && (
+                          <div className="mt-4 space-y-2">
+                            <textarea
+                              value={feeRemarksMap[r.id] || ""}
+                              onChange={(e) => setFeeRemarksMap((m) => ({ ...m, [r.id]: e.target.value }))}
+                              placeholder="Remarks / rejection reason (required for rejection)…"
+                              rows={2}
+                              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleFeeApproval(r.id, "approved")}
+                                disabled={processingFee === r.id}
+                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                              >
+                                {processingFee === r.id ? "Processing…" : "✓ Approve Fee"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleFeeApproval(r.id, "rejected")}
+                                disabled={processingFee === r.id}
+                                className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-sm font-semibold rounded-lg transition-colors"
+                              >
+                                ✕ Reject Fee
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {feeStatus === "approved" && (
+                          <div className="mt-3 flex items-center gap-2">
+                            <span className="text-xs text-green-600 font-medium">Fee approved</span>
+                            {r.fee_approved_by_name && <span className="text-xs text-slate-400">by {r.fee_approved_by_name}</span>}
+                            <button
+                              type="button"
+                              onClick={() => handleFeeApproval(r.id, "rejected")}
+                              disabled={processingFee === r.id}
+                              className="ml-auto px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-colors"
+                            >
+                              Revoke
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           )}
@@ -644,7 +788,7 @@ function AdminDashboard() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm" aria-label="Requests table">
-                      <THead cols={["Student", "Status", "Stage", "Assigned Teacher", "Date"]} />
+                      <THead cols={["Student", "Status", "Stage", "Fee Status", "Assigned Teacher", "Date", "Actions"]} />
                       <tbody className="divide-y divide-slate-100">
                         {filteredRequests.map((r) => {
                           const STAGE_LABELS = { teacher: "With Teacher", hod: "With HOD", admin: "With Admin", completed: "Completed" };
@@ -664,8 +808,49 @@ function AdminDashboard() {
                             <td className="px-4 py-3">
                               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${stageClass}`}>{stageLabel}</span>
                             </td>
+                            <td className="px-4 py-3">
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                r.fee_status === "approved" ? "bg-green-100 text-green-700"
+                                : r.fee_status === "rejected" ? "bg-red-100 text-red-700"
+                                : "bg-amber-100 text-amber-700"
+                              }`}>
+                                Fee: {r.fee_status || "pending"}
+                              </span>
+                            </td>
                             <td className="px-4 py-3 text-slate-600">{r.assigned_teacher_name || <span className="text-slate-400">—</span>}</td>
                             <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
+                            {r.status === "pending" && (
+                              <td className="px-4 py-3">
+                                <div className="flex flex-col gap-1.5">
+                                  <input
+                                    type="text"
+                                    placeholder="Remarks…"
+                                    value={directRemarksMap[r.id] || ""}
+                                    onChange={(e) => setDirectRemarksMap((m) => ({ ...m, [r.id]: e.target.value }))}
+                                    className="px-2 py-1 text-xs border border-slate-200 rounded w-36 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                  />
+                                  <div className="flex gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDirectApprove(r.id, "approved")}
+                                      disabled={processingDirect === r.id}
+                                      className="px-2.5 py-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-xs font-semibold rounded transition-colors"
+                                    >
+                                      {processingDirect === r.id ? "…" : "Approve"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDirectApprove(r.id, "rejected")}
+                                      disabled={processingDirect === r.id}
+                                      className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold rounded transition-colors"
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                </div>
+                              </td>
+                            )}
+                            {r.status !== "pending" && <td className="px-4 py-3 text-slate-400 text-xs">—</td>}
                           </tr>
                           );
                         })}

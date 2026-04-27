@@ -12,8 +12,9 @@ const navItems = [
   { key: "create",       label: "Create User",       caption: "Add a new account"                 },
   { key: "manage",       label: "Manage Users",      caption: "Edit or remove accounts"           },
   { key: "modules",      label: "Module Assignments",caption: "Assign staff to clearance modules" },
-  { key: "tgc-subjects", label: "TGC Subjects",      caption: "Manage Term Grant subjects"        }, // ADDED
-  { key: "tgc-overview", label: "TGC Overview",      caption: "Analytics & student status"        }, // ADDED
+  { key: "tgc-subjects", label: "TGC Subjects",      caption: "Manage Term Grant subjects"        },
+  { key: "tgc-overview", label: "TGC Overview",      caption: "Analytics & student status"        },
+  { key: "clearance",    label: "Clearance Approvals",caption: "Review and approve student clearances" },
 ];
 
 const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-150";
@@ -101,6 +102,13 @@ function SuperAdminDashboard() {
   const [savingSubj,       setSavingSubj]        = useState(false);
   const [assignTeacherMap, setAssignTeacherMap]  = useState({}); // subjectId -> teacherId string
   const [savingAssign,     setSavingAssign]      = useState(null); // subjectId being saved
+  // Clearance approval state
+  const [clearanceRequests,   setClearanceRequests]   = useState([]);
+  const [clearanceLoading,    setClearanceLoading]    = useState(false);
+  const [clearanceRemarksMap, setClearanceRemarksMap] = useState({});
+  const [processingClearance, setProcessingClearance] = useState(null);
+  // Quick clearance approve from users list
+  const [approvingUserId, setApprovingUserId] = useState(null);
   const TGC_ITEM_TYPES = [
     { value: "TH",   label: "Theory (TH)" },
     { value: "PR",   label: "Practical (PR)" },
@@ -192,6 +200,46 @@ function SuperAdminDashboard() {
     };
     load();
   }, [activeKey, addToast]);
+
+  // Clearance approvals
+  useEffect(() => {
+    if (activeKey !== "clearance") return;
+    const load = async () => {
+      try {
+        setClearanceLoading(true);
+        const res = await API.get("/api/super-admin/clearance-requests");
+        setClearanceRequests(res.data.requests || []);
+      } catch { addToast("Could not load clearance requests.", "warning"); }
+      finally { setClearanceLoading(false); }
+    };
+    load();
+  }, [activeKey, addToast]);
+
+  const handleClearanceApproval = async (requestId, status) => {    const remarks = clearanceRemarksMap[requestId] || "";
+    if (status === "rejected" && !remarks.trim()) {
+      addToast("Please provide a rejection reason.", "warning"); return;
+    }
+    try {
+      setProcessingClearance(requestId);
+      await API.patch(`/api/super-admin/clearance/${requestId}/approve`, { status, remarks });
+      addToast(status === "approved" ? "Clearance approved." : "Clearance rejected.", status === "approved" ? "success" : "info");
+      const res = await API.get("/api/super-admin/clearance-requests");
+      setClearanceRequests(res.data.requests || []);
+    } catch (err) {
+      addToast(err.response?.data?.message || "Action failed.", "error");
+    } finally { setProcessingClearance(null); }
+  };
+
+  const handleApproveStudentClearance = async (userId, userName) => {
+    if (!window.confirm(`Approve full clearance for ${userName}?`)) return;
+    try {
+      setApprovingUserId(userId);
+      await API.patch(`/api/super-admin/users/${userId}/approve-clearance`);
+      addToast(`Clearance approved for ${userName}.`, "success");
+    } catch (err) {
+      addToast(err.response?.data?.message || "Failed to approve clearance.", "error");
+    } finally { setApprovingUserId(null); }
+  };
 
   const handleCreateTGCSubject = async (e) => {
     e.preventDefault();
@@ -464,6 +512,16 @@ function SuperAdminDashboard() {
                                 <div className="flex gap-2 justify-end">
                                   <button type="button" onClick={() => startEdit(u)} className="px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-md transition-all duration-150">Edit</button>
                                   <button type="button" onClick={() => setDeleteTarget(u)} className="px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 rounded-md transition-all duration-150">Delete</button>
+                                  {u.role === "student" && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleApproveStudentClearance(u.id, u.name)}
+                                      disabled={approvingUserId === u.id}
+                                      className="px-3 py-1 text-xs font-semibold text-green-600 hover:bg-green-50 border border-green-200 rounded-md transition-all duration-150 disabled:opacity-50"
+                                    >
+                                      {approvingUserId === u.id ? "…" : "Approve Clearance"}
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -656,8 +714,9 @@ function SuperAdminDashboard() {
                                   <span className="text-xs text-slate-400">None</span>
                                 ) : (
                                   <div className="flex flex-wrap gap-1">
+                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">Assigned</span>
                                     {(sub.teachers || []).map(t => (
-                                      <span key={t.id} className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">{t.name}</span>
+                                      <span key={t.teacher_id || t.id} className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">{t.teacher_name || t.name}</span>
                                     ))}
                                   </div>
                                 )}
@@ -827,6 +886,94 @@ function SuperAdminDashboard() {
                       )}
                     </div>
                   </>
+                )}
+              </div>
+            )}
+            {/* CLEARANCE APPROVALS ─────────────────────────────────── */}
+            {activeKey === "clearance" && (
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-violet-600 to-purple-700 rounded-2xl p-6 text-white">
+                  <h1 className="text-2xl font-bold">Clearance Approvals</h1>
+                  <p className="text-violet-100 text-sm mt-1">Review and approve or reject student clearance requests.</p>
+                </div>
+                {clearanceLoading ? (
+                  <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-24 bg-slate-100 rounded-xl animate-pulse" />)}</div>
+                ) : clearanceRequests.length === 0 ? (
+                  <div className="bg-white rounded-xl border border-slate-200">
+                    <EmptyState title="No clearance requests" desc="No students have submitted clearance requests yet." />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {clearanceRequests.map((r) => {
+                      const overall = r.status || "pending";
+                      const overallPill = overall === "approved" ? "bg-green-100 text-green-700" : overall === "rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700";
+                      const feePill = r.fee_status === "approved" ? "bg-green-100 text-green-700" : r.fee_status === "rejected" ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600";
+                      const stagePill = r.current_stage === "completed" ? "bg-green-100 text-green-700" : r.current_stage === "admin" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600";
+                      return (
+                        <div key={r.id} className="bg-white rounded-xl border border-slate-200 p-5">
+                          <div className="flex items-start justify-between gap-4 flex-wrap">
+                            <div>
+                              <p className="font-semibold text-slate-900">{r.student_name}</p>
+                              <p className="text-xs text-slate-500">{r.student_email} · {r.department || "—"} · {r.roll_number || "—"}</p>
+                              <p className="text-xs text-slate-400 mt-0.5">Sem {r.semester || "—"} · Year {r.year || "—"} · Teacher: {r.assigned_teacher_name || "—"}</p>
+                              <p className="text-xs text-slate-400">Submitted: {r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : "—"}</p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 shrink-0">
+                              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${overallPill}`}>{overall}</span>
+                              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${feePill}`}>Fee: {r.fee_status || "pending"}</span>
+                              {r.current_stage && <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${stagePill}`}>Stage: {r.current_stage}</span>}
+                            </div>
+                          </div>
+                          {r.rejection_reason && (
+                            <p className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg mt-2">Reason: {r.rejection_reason}</p>
+                          )}
+                          {overall !== "approved" && (
+                            <div className="mt-4 space-y-2">
+                              <textarea
+                                value={clearanceRemarksMap[r.id] || ""}
+                                onChange={(e) => setClearanceRemarksMap((m) => ({ ...m, [r.id]: e.target.value }))}
+                                placeholder="Remarks / rejection reason (required for rejection)…"
+                                rows={2}
+                                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleClearanceApproval(r.id, "approved")}
+                                  disabled={processingClearance === r.id}
+                                  className="px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                                >
+                                  {processingClearance === r.id ? "Processing…" : "✓ Approve Clearance"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleClearanceApproval(r.id, "rejected")}
+                                  disabled={processingClearance === r.id}
+                                  className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-sm font-semibold rounded-lg transition-colors"
+                                >
+                                  ✕ Reject
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          {overall === "approved" && (
+                            <div className="mt-3 flex items-center gap-2">
+                              <span className="text-xs text-green-600 font-medium">Clearance fully approved</span>
+                              {r.approved_at && <span className="text-xs text-slate-400">{new Date(r.approved_at).toLocaleDateString()}</span>}
+                              <button
+                                type="button"
+                                onClick={() => handleClearanceApproval(r.id, "rejected")}
+                                disabled={processingClearance === r.id}
+                                className="ml-auto px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-colors"
+                              >
+                                Revoke
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
