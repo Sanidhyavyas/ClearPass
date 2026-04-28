@@ -1,6 +1,7 @@
 import axios from "axios";
 
 import { clearAuth, getToken } from "../utils/auth";
+import logger, { correlationId } from "../utils/logger";
 
 const PUBLIC_AUTH_PATH_SUFFIXES = [
   "/login",
@@ -35,27 +36,62 @@ const API = axios.create({
 API.interceptors.request.use((config) => {
   if (isPublicAuthRequest(config.url)) {
     delete config.headers.Authorization;
-    return config;
+  } else {
+    const token = getToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
   }
 
-  const token = getToken();
+  // Attach correlation ID so backend logs can be tied to this frontend session
+  config.headers["x-request-id"] = correlationId;
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  // Record start time for duration calculation
+  config._startTime = Date.now();
+
+  // Don't log the /api/logs request itself (would create infinite loop)
+  if (!config.url?.includes("/api/logs")) {
+    logger.logApiRequest(config.method || "get", config.url, config.data);
   }
 
   return config;
 });
 
 API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const durationMs = response.config._startTime ? Date.now() - response.config._startTime : null;
+    if (!response.config.url?.includes("/api/logs")) {
+      logger.logApiResponse(
+        response.config.method || "get",
+        response.config.url,
+        response.status,
+        durationMs
+      );
+    }
+    return response;
+  },
   (error) => {
-    if (error.response?.status === 401 && !isPublicAuthRequest(error.config?.url)) {
+    const config     = error.config || {};
+    const status     = error.response?.status;
+    const durationMs = config._startTime ? Date.now() - config._startTime : null;
+
+    if (status === 401 && !isPublicAuthRequest(config.url)) {
       clearAuth();
     }
+
+    if (!config.url?.includes("/api/logs")) {
+      logger.logApiError(
+        config.method || "unknown",
+        config.url    || "unknown",
+        status        || 0,
+        error.message
+      );
+    }
+
+    // Attach durationMs for optional upstream use
+    if (error.response) error.response._durationMs = durationMs;
 
     return Promise.reject(error);
   }
 );
 
 export default API;
+

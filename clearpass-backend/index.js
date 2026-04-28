@@ -2,6 +2,12 @@ require("dotenv").config();
 
 const cors = require("cors");
 const express = require("express");
+
+// ── Logging ──────────────────────────────────────────────────────────────
+const logger        = require("./utils/logger");
+const requestLogger = require("./middleware/requestLogger");
+const logRoutes     = require("./routes/logRoutes");
+
 const authRoutes = require("./routes/authRoutes");
 const auditRoutes = require("./routes/auditRoutes");
 const clearanceRoutes = require("./routes/clearanceRoutes");
@@ -31,11 +37,17 @@ app.use(
 );
 app.use(express.json());
 
+// ── Request / Response logger (must come after express.json) ────────────
+app.use(requestLogger);
+
 app.get("/", (req, res) => {
   res.json({
     message: "ClearPass backend is running"
   });
 });
+
+// ── Frontend log intake ──────────────────────────────────────────────────
+app.use("/api/logs", logRoutes);
 
 app.use("/", authRoutes);
 app.use("/", clearanceRoutes);
@@ -66,8 +78,16 @@ app.use((req, res) => {
   });
 });
 
+// ── Centralized error handler ────────────────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error(err);
+  logger.error("Unhandled error", {
+    requestId: req.requestId || null,
+    userId:    req.user?.id  || null,
+    route:     req.originalUrl,
+    method:    req.method,
+    message:   err.message,
+    stack:     err.stack,
+  });
 
   res.status(err.statusCode || 500).json({
     message: err.message || "Internal server error"
@@ -77,7 +97,7 @@ app.use((err, req, res, next) => {
 // On Vercel the module is imported as a serverless function; only listen locally
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    logger.info(`Server running on port ${PORT}`, { port: PORT, env: process.env.NODE_ENV || "development" });
   });
 }
 
