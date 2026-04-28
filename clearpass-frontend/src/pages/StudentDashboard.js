@@ -28,10 +28,10 @@ const TIMELINE_DOT = {
 };
 
 const navItems = [
-  { key: "term-grant", label: "Term Grant",  caption: "Certificate status" }, // ADDED: primary TGC tab
-  { key: "overview",   label: "Overview",   caption: "Your clearance status" },
-  { key: "documents",  label: "Documents",  caption: "Upload supporting files" },
-  { key: "history",    label: "History",    caption: "Application timeline"   },
+  { key: "term-grant",  label: "Term Grant",  caption: "Certificate status"     },
+  { key: "assignments", label: "Assignments", caption: "Your assignments"        },
+  { key: "documents",   label: "Documents",   caption: "Upload supporting files" },
+  { key: "history",     label: "History",     caption: "Application timeline"    },
 ];
 
 function StatusPill({ status }) {
@@ -90,6 +90,11 @@ export default function StudentDashboard() {
   const [tgcLoading, setTgcLoading]       = useState(false);
   const [tgcRequesting, setTgcRequesting] = useState(false);
   const [expandedSubjects, setExpandedSubjects] = useState({});
+
+  // ADDED: Assignments state
+  const [assignmentSubjects, setAssignmentSubjects] = useState([]);
+  const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+  const [uploadingAssignId,  setUploadingAssignId]  = useState(null);
 
   const loadProfile = useCallback(async () => { // ADDED
     try {
@@ -213,6 +218,45 @@ export default function StudentDashboard() {
       setDocuments((prev) => prev.filter((d) => d.id !== docId));
     } catch (err) {
       addToast(err.response?.data?.message || "Failed to delete.", "error");
+    }
+  };
+
+  // ADDED: load assignments when tab active
+  const loadAssignments = useCallback(async () => {
+    try {
+      setAssignmentsLoading(true);
+      const res = await API.get("/api/assignments/student/all");
+      setAssignmentSubjects(res.data.subjects || []);
+    } catch { /* silent */ } finally { setAssignmentsLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    if (activeKey === "assignments") loadAssignments();
+  }, [activeKey, loadAssignments]);
+
+  const handleSubmitAssignment = async (assignmentId) => {
+    const input = document.getElementById(`assign-file-${assignmentId}`);
+    if (!input?.files?.length) return;
+    const formData = new FormData();
+    formData.append("file", input.files[0]);
+    try {
+      setUploadingAssignId(assignmentId);
+      await API.post(`/api/assignments/${assignmentId}/submit`, formData);
+      addToast("Submission uploaded!", "success");
+      input.value = "";
+      loadAssignments();
+    } catch (err) {
+      addToast(err.response?.data?.message || "Upload failed", "error");
+    } finally { setUploadingAssignId(null); }
+  };
+
+  const handleDeleteSubmission = async (submissionId) => {
+    try {
+      await API.delete(`/api/assignments/submissions/${submissionId}`);
+      addToast("Submission deleted", "info");
+      loadAssignments();
+    } catch (err) {
+      addToast(err.response?.data?.message || "Delete failed", "error");
     }
   };
 
@@ -455,11 +499,10 @@ export default function StudentDashboard() {
                     );
                   })()}
 
-                  {/* Fee + Survey Status */}
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Fee Status */}
+                  <div className="grid grid-cols-1 gap-4">
                     {[
-                      { label: "Fee Cleared",           val: tgcData.certificate?.fee_cleared,       yes: "Cleared ✅",    no: "Pending ❌" },
-                      { label: "MIT ADTU Survey",        val: tgcData.certificate?.survey_completed,  yes: "Completed ✅",  no: "Pending ❌" },
+                      { label: "Fee Cleared", val: tgcData.certificate?.fee_cleared, yes: "Cleared ✅", no: "Pending ❌" },
                     ].map(({ label, val, yes, no }) => (
                       <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
                         <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">{label}</p>
@@ -509,165 +552,6 @@ export default function StudentDashboard() {
                     );
                   })()}
                 </>
-              )}
-            </div>
-          )}
-
-          {/* ── OVERVIEW ───────────────────────────────────────────── */}
-          {activeKey === "overview" && (
-            <div className="space-y-6">
-
-              {/* ADDED: Student Identity Card (student_code + TGC) */}
-              {profile && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-wrap gap-6 items-center">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-11 h-11 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg shrink-0">
-                      {(profile.name || "S").charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 truncate">{profile.name}</p>
-                      <p className="text-xs text-gray-400 truncate">{profile.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4 flex-wrap">
-                    <div className="bg-blue-50 rounded-lg px-4 py-2 text-center">
-                      <p className="text-xs text-blue-500 font-medium uppercase tracking-wide">Student ID</p>
-                      <p className="text-sm font-bold text-blue-800 mt-0.5">{profile.student_code}</p>
-                    </div>
-                    <div className="bg-indigo-50 rounded-lg px-4 py-2 text-center">
-                      <p className="text-xs text-indigo-500 font-medium uppercase tracking-wide">Total Grade Credits</p>
-                      <p className="text-sm font-bold text-indigo-800 mt-0.5">{profile.tgc ?? 0}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Clearance Status Card */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-base font-semibold text-gray-800 mb-4">Your clearance status</h2>
-
-                <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                  <span>Overall progress</span>
-                  <span className="font-bold text-gray-900">{progress}%</span>
-                </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden mb-4">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${progress}%`, backgroundColor: progressColor }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className={`text-sm font-semibold px-3 py-1 rounded-full ${
-                    statusLabel === "Fully Cleared"    ? "bg-green-100 text-green-800" :
-                    statusLabel === "Action Required"  ? "bg-red-100 text-red-800" :
-                                                         "bg-blue-100 text-blue-800"
-                  }`}>
-                    {statusLabel}
-                  </span>
-                  {status?.request?.updated_at && (
-                    <span className="text-xs text-gray-400">
-                      Updated {formatDate(status.request.updated_at)}
-                    </span>
-                  )}
-                </div>
-
-                {/* Approval stage stepper */}
-                {status?.request && (() => {
-                  const STAGES = [
-                    { key: "teacher", label: "Teacher" },
-                    { key: "admin",   label: "Admin"   },
-                    { key: "completed", label: "Completed" },
-                  ];
-                  const reqStage   = status.request.current_stage || "teacher";
-                  const reqStatus  = status.request.status;
-                  const activeIdx  = STAGES.findIndex((s) => s.key === reqStage);
-                  const isRejected = reqStatus === "rejected";
-
-                  return (
-                    <div className="mt-5 pt-5 border-t border-gray-100">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Approval pipeline</p>
-                      <ol className="flex items-center gap-0">
-                        {STAGES.map((stage, idx) => {
-                          const isDone    = !isRejected && idx < activeIdx;
-                          const isCurrent = idx === activeIdx;
-                          const isLast    = idx === STAGES.length - 1;
-
-                          const circleClass = isDone
-                            ? "bg-green-500 text-white border-green-500"
-                            : isCurrent && isRejected
-                            ? "bg-red-500 text-white border-red-500"
-                            : isCurrent
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-white text-gray-400 border-gray-200";
-
-                          const labelClass = isDone
-                            ? "text-green-700 font-semibold"
-                            : isCurrent && isRejected
-                            ? "text-red-600 font-semibold"
-                            : isCurrent
-                            ? "text-blue-700 font-semibold"
-                            : "text-gray-400";
-
-                          return (
-                            <li key={stage.key} className={`flex items-center ${!isLast ? "flex-1" : ""}`}>
-                              <div className="flex flex-col items-center">
-                                <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold ${circleClass}`}>
-                                  {isDone ? "✓" : idx + 1}
-                                </div>
-                                <span className={`text-xs mt-1 whitespace-nowrap ${labelClass}`}>{stage.label}</span>
-                              </div>
-                              {!isLast && (
-                                <div className={`flex-1 h-0.5 mx-1 mb-4 ${isDone ? "bg-green-400" : "bg-gray-200"}`} />
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ol>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* Module Cards 2×2 Grid */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Module breakdown</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {allModules.map((mod) => (
-                    <ModuleCard key={mod.module_name} mod={mod} />
-                  ))}
-                </div>
-              </div>
-
-              {/* Certificate download — visible only when fully approved */}
-              {status?.request?.status === "approved" && status?.request?.current_stage === "completed" && (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-5 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-green-800">Clearance Certificate Ready</p>
-                    <p className="text-xs text-green-600 mt-0.5">Your clearance has been fully approved. Download your official PDF certificate.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        const res = await API.get(`/api/clearance/${status.request.id}/certificate`, { responseType: "blob" });
-                        const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = "clearance_certificate.pdf";
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                      } catch {
-                        addToast("Could not download certificate. Please try again.", "error");
-                      }
-                    }}
-                    className="shrink-0 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors"
-                  >
-                    ↓ Download PDF
-                  </button>
-                </div>
               )}
             </div>
           )}
@@ -813,6 +697,122 @@ export default function StudentDashboard() {
                     </div>
                   </div>
                 </div>
+              )}
+            </div>
+          )}
+          {activeKey === "assignments" && (
+            <div className="space-y-4">
+              {assignmentsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2].map(i => (
+                    <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5">
+                      <div className="h-4 bg-gray-100 rounded animate-pulse w-1/3 mb-3" />
+                      <div className="space-y-2">
+                        {[1, 2].map(j => <div key={j} className="h-16 bg-gray-50 rounded-xl animate-pulse" />)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : assignmentSubjects.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center text-sm text-gray-400">
+                  No assignments yet. They will appear here once your teacher posts them.
+                </div>
+              ) : (
+                assignmentSubjects.map(subject => (
+                  <div key={subject.subject_id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="px-5 py-3.5 bg-slate-50 border-b border-gray-100">
+                      <p className="text-sm font-semibold text-gray-900">{subject.subject_name}</p>
+                      <p className="text-xs text-gray-400">{subject.subject_code}</p>
+                    </div>
+                    <div className="divide-y divide-gray-50">
+                      {subject.assignments.map(asgn => {
+                        const status = asgn.submission_status;
+                        const statusColor =
+                          status === "accepted" ? "bg-green-100 text-green-700" :
+                          status === "rejected" ? "bg-red-100 text-red-700"    :
+                          status === "submitted" ? "bg-amber-100 text-amber-700" :
+                          "bg-gray-100 text-gray-500";
+                        const statusLabel =
+                          status === "accepted" ? "Accepted ✓" :
+                          status === "rejected" ? "Rejected ✗" :
+                          status === "submitted" ? "Submitted" :
+                          "Not Submitted";
+
+                        return (
+                          <div key={asgn.id} className="px-5 py-4 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-gray-900">{asgn.title}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                  by {asgn.teacher_name}
+                                  {asgn.due_date && ` · Due ${new Date(asgn.due_date).toLocaleDateString("en-IN")}`}
+                                </p>
+                                {asgn.description && (
+                                  <p className="text-xs text-gray-500 mt-1">{asgn.description}</p>
+                                )}
+                              </div>
+                              <span className={`shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded-full ${statusColor}`}>
+                                {statusLabel}
+                              </span>
+                            </div>
+
+                            {/* Rejection remark */}
+                            {status === "rejected" && asgn.remarks && (
+                              <div className="bg-red-50 border border-red-100 rounded-lg px-3 py-2 text-xs text-red-700">
+                                <span className="font-semibold">Remark:</span> {asgn.remarks}
+                              </div>
+                            )}
+
+                            {/* Actions */}
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {/* Upload/re-upload input */}
+                              {status !== "accepted" && (
+                                <>
+                                  <input
+                                    id={`assign-file-${asgn.id}`}
+                                    type="file"
+                                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                    className="hidden"
+                                    onChange={() => handleSubmitAssignment(asgn.id)}
+                                  />
+                                  <label
+                                    htmlFor={`assign-file-${asgn.id}`}
+                                    className={`cursor-pointer px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                                      uploadingAssignId === asgn.id
+                                        ? "bg-gray-200 text-gray-500 cursor-wait"
+                                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                                    }`}
+                                  >
+                                    {uploadingAssignId === asgn.id ? "Uploading…" :
+                                     status === "rejected" ? "Re-upload" : "Upload"}
+                                  </label>
+                                </>
+                              )}
+
+                              {/* Delete button — only if pending review */}
+                              {status === "submitted" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteSubmission(asgn.submission_id)}
+                                  className="px-3 py-1.5 bg-gray-100 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-colors"
+                                >
+                                  Delete
+                                </button>
+                              )}
+
+                              {/* Submitted file info */}
+                              {asgn.file_name && (
+                                <span className="text-xs text-gray-400 self-center truncate max-w-[140px]" title={asgn.file_name}>
+                                  {asgn.file_name}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           )}

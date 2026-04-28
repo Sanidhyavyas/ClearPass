@@ -964,8 +964,7 @@ async function buildTGCPDF({ student, cert, approvals, filePath }) {
        );
 
     doc.fontSize(8).font("Helvetica-Bold").fillColor("#333")
-       .text(`Fee Cleared: ${cert.fee_cleared ? "Yes" : "No"}`, M, ftrY + 14)
-       .text(`MIT ADTU Student Satisfaction Survey: ${cert.survey_completed ? "Completed" : "Pending"}`, M + 220, ftrY + 14);
+       .text(`Fee Cleared: ${cert.fee_cleared ? "Yes" : "No"}`, M, ftrY + 14);
 
     // Signature boxes
     const sigY  = ftrY + 30;
@@ -1069,7 +1068,6 @@ const getAllStudentsWithCertStatus = async (req, res, next) => {
          tgc.semester,
          tgc.academic_year,
          tgc.fee_cleared,
-         tgc.survey_completed,
          COUNT(sa.id) FILTER (WHERE sa.status = 'approved') AS approved_subjects,
          COUNT(sa.id)                                        AS total_subjects
        FROM users u
@@ -1117,28 +1115,26 @@ const getMyAssignedSubjects = async (req, res, next) => {
 
 /**
  * PATCH /api/tgc/certificate/:certId/flags
- * Admin updates fee_cleared, survey_completed, mentor/amc/class_teacher signed flags.
+ * Admin updates fee_cleared, mentor/amc/class_teacher signed flags.
  */
 const updateCertificateFlags = async (req, res, next) => {
   try {
     const { certId } = req.params;
     const {
-      fee_cleared, survey_completed,
+      fee_cleared,
       mentor_signed, amc_signed, class_teacher_signed,
     } = req.body;
 
     const { rows: [updated] } = await db.query(
       `UPDATE term_grant_certificates
        SET fee_cleared          = COALESCE($1, fee_cleared),
-           survey_completed     = COALESCE($2, survey_completed),
-           mentor_signed        = COALESCE($3, mentor_signed),
-           amc_signed           = COALESCE($4, amc_signed),
-           class_teacher_signed = COALESCE($5, class_teacher_signed)
-       WHERE id = $6
+           mentor_signed        = COALESCE($2, mentor_signed),
+           amc_signed           = COALESCE($3, amc_signed),
+           class_teacher_signed = COALESCE($4, class_teacher_signed)
+       WHERE id = $5
        RETURNING *`,
       [
         fee_cleared ?? null,
-        survey_completed ?? null,
         mentor_signed ?? null,
         amc_signed ?? null,
         class_teacher_signed ?? null,

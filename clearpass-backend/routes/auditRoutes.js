@@ -5,6 +5,6 @@ const { authorizeRoles, verifyToken } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.get("/audit-logs", verifyToken, authorizeRoles("admin"), getAuditLogs);
+router.get("/", verifyToken, authorizeRoles("admin"), getAuditLogs);
 
 module.exports = router;

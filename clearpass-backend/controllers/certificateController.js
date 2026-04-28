@@ -26,6 +26,8 @@ const {
 const CERT_DIR = path.join(__dirname, "..", "uploads", "certificates");
 if (!fs.existsSync(CERT_DIR)) fs.mkdirSync(CERT_DIR, { recursive: true });
 
+const CLEARANCE_MODULES = ["library", "accounts", "hostel", "department"];
+
 // ── Helper: generate PDF certificate ─────────────────────────────────────
 async function generateCertificate({ student, request, modules, token, certPath }) {
   const verifyUrl = `${process.env.CLIENT_URL || "http://localhost:3000"}/verify/${token}`;
@@ -142,6 +144,62 @@ async function generateCertificate({ student, request, modules, token, certPath 
     stream.on("finish", resolve);
     stream.on("error", reject);
   });
+}
+
+// ── Shared helper: auto-approve modules + generate certificate ────────────
+/**
+ * Called when a super admin approves a clearance (bypassing normal flow).
+ * 1. Auto-marks all 4 clearance modules as 'approved' for the student.
+ * 2. Generates the PDF clearance certificate with QR code.
+ * 3. Stores the QR token in qr_tokens.
+ * 4. Sends the approval email to the student.
+ *
+ * @param {object} opts
+ * @param {number} opts.requestId
+ * @param {object} opts.request    - clearance_requests row (needs roll_number, department, semester, year)
+ * @param {object} opts.student    - { id, name, email, department }
+ * @param {number} opts.performedById - super admin user id (set as updated_by on modules)
+ */
+async function autoApproveModulesAndIssueCert({ requestId, request, student, performedById }) {
+  // 1. Upsert all clearance modules to 'approved'
+  for (const moduleName of CLEARANCE_MODULES) {
+    await db.query(
+      `INSERT INTO clearance_modules (student_id, module_name, status, last_updated, updated_by)
+       VALUES ($1, $2, 'approved', NOW(), $3)
+       ON CONFLICT (student_id, module_name)
+         DO UPDATE SET status = 'approved', last_updated = NOW(), updated_by = EXCLUDED.updated_by`,
+      [student.id, moduleName, performedById]
+    );
+  }
+
+  // 2. Fetch modules with reviewer names (for PDF table)
+  const { rows: modules } = await db.query(
+    `SELECT cm.*, u.name AS reviewer_name
+     FROM clearance_modules cm
+     LEFT JOIN users u ON u.id = cm.updated_by
+     WHERE cm.student_id = $1
+     ORDER BY cm.module_name`,
+    [student.id]
+  );
+
+  // 3. Generate PDF + QR
+  const token    = crypto.randomBytes(32).toString("hex");
+  const certPath = path.join(CERT_DIR, `${student.id}_${requestId}.pdf`);
+  await generateCertificate({ student, request, modules, token, certPath });
+
+  // 4. Store QR token (upsert on request_id)
+  await db.query(
+    `INSERT INTO qr_tokens (token, request_id, student_id, certificate_path)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (request_id)
+       DO UPDATE SET token = EXCLUDED.token, certificate_path = EXCLUDED.certificate_path`,
+    [token, requestId, student.id, certPath]
+  );
+
+  // 5. Send approval email (non-fatal)
+  sendFinalApproval(student, certPath).catch(() => {});
+
+  return { token, certPath };
 }
 
 // ── GET /api/clearance/pending-final ─────────────────────────────────────
@@ -334,6 +392,7 @@ const verifyToken = async (req, res, next) => {
 };
 
 module.exports = {
+  autoApproveModulesAndIssueCert,
   getPendingFinal,
   finalizeRequest,
   getCertificate,

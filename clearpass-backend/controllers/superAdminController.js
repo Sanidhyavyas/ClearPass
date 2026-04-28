@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 
 const db = require("../db");
 const { createAuditLog } = require("./auditController");
+const { autoApproveModulesAndIssueCert } = require("./certificateController");
 
 const buildSuperAdminAuthResponse = (superAdmin) => {
   const token = jwt.sign(
@@ -216,7 +217,29 @@ const approveStudentClearance = async (req, res, next) => {
       );
     }
 
-    return res.json({ message: "Student clearance approved" });
+    // ── Auto-approve clearance modules + generate clearance certificate ──
+    // Fetch the full request row so generateCertificate has semester/year/etc.
+    const { rows: reqRows } = await db.query(
+      "SELECT * FROM clearance_requests WHERE id = $1 LIMIT 1",
+      [requestId]
+    );
+    const fullRequest = reqRows[0] || {};
+
+    await autoApproveModulesAndIssueCert({
+      requestId,
+      request: fullRequest,
+      student: {
+        id:         userId,
+        name:       student.name,
+        email:      student.email || "",
+        department: student.department,
+      },
+      performedById: req.user.id,
+    }).catch((err) => {
+      console.error("[approveStudentClearance] Certificate generation failed:", err.message);
+    });
+
+    return res.json({ message: "Student clearance approved", certificate_ready: true });
   } catch (error) {
     return next(error);
   }
@@ -256,11 +279,23 @@ const superAdminApproveClearance = async (req, res, next) => {
       return res.status(400).json({ message: "status must be 'approved' or 'rejected'" });
     }
 
+    // Fetch full request + student info needed for certificate generation
     const { rows } = await db.query(
-      "SELECT id, student_id FROM clearance_requests WHERE id = $1 LIMIT 1",
+      `SELECT cr.*, u.name AS student_name, u.email AS student_email, u.department AS student_dept
+       FROM clearance_requests cr
+       JOIN users u ON u.id = cr.student_id
+       WHERE cr.id = $1 LIMIT 1`,
       [requestId]
     );
     if (!rows.length) return res.status(404).json({ message: "Clearance request not found" });
+
+    const request = rows[0];
+    const student = {
+      id:         request.student_id,
+      name:       request.student_name,
+      email:      request.student_email,
+      department: request.student_dept,
+    };
 
     if (status === "approved") {
       await db.query(
@@ -270,6 +305,16 @@ const superAdminApproveClearance = async (req, res, next) => {
          WHERE id = $1`,
         [requestId]
       );
+
+      // Auto-approve all clearance modules + generate certificate
+      await autoApproveModulesAndIssueCert({
+        requestId,
+        request,
+        student,
+        performedById: req.user.id,
+      }).catch((err) => {
+        console.error("[superAdminApproveClearance] Certificate generation failed:", err.message);
+      });
     } else {
       await db.query(
         `UPDATE clearance_requests
@@ -290,7 +335,10 @@ const superAdminApproveClearance = async (req, res, next) => {
       details:    `Clearance request #${requestId} ${status} by Super Admin${remarks ? `. Remarks: ${remarks}` : ""}`,
     });
 
-    return res.json({ message: `Clearance request ${status} by super admin` });
+    return res.json({
+      message: `Clearance request ${status} by super admin`,
+      certificate_ready: status === "approved",
+    });
   } catch (error) {
     return next(error);
   }

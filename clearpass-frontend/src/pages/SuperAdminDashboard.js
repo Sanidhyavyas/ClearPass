@@ -845,7 +845,6 @@ function SuperAdminDashboard() {
                                 <th className="px-4 py-3 text-center">Approved</th>
                                 <th className="px-4 py-3 text-center">Certificate Status</th>
                                 <th className="px-4 py-3 text-center">Fee</th>
-                                <th className="px-4 py-3 text-center">Survey</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
@@ -870,11 +869,6 @@ function SuperAdminDashboard() {
                                       <td className="px-4 py-3 text-center">
                                         <span className={s.fee_cleared ? "text-green-600 font-semibold" : "text-red-500"}>
                                           {s.fee_cleared ? "✓" : "✗"}
-                                        </span>
-                                      </td>
-                                      <td className="px-4 py-3 text-center">
-                                        <span className={s.survey_completed ? "text-green-600 font-semibold" : "text-red-500"}>
-                                          {s.survey_completed ? "✓" : "✗"}
                                         </span>
                                       </td>
                                     </tr>

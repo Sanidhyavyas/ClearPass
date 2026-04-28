@@ -11,10 +11,11 @@ import API from "../services/api";
 
 // ADDED: TGC nav tabs
 const TGC_NAV = [
-  { key: "requests",  label: "Clearance Requests", caption: "Review student clearance" },
-  { key: "subjects",  label: "My TGC Subjects",    caption: "Assigned subjects"        },
-  { key: "checklist", label: "Checklist Builder",  caption: "Manage checklist items"   },
-  { key: "approvals", label: "Student Approvals",  caption: "Approve subject clearance"},
+  { key: "requests",    label: "Clearance Requests", caption: "Review student clearance"  },
+  { key: "subjects",    label: "My TGC Subjects",    caption: "Assigned subjects"         },
+  { key: "checklist",  label: "Checklist Builder",  caption: "Manage checklist items"    },
+  { key: "approvals",  label: "Student Approvals",  caption: "Approve subject clearance" },
+  { key: "assignments",label: "Assignments",         caption: "Create & review assignments"},
 ];
 
 // ── Stat Card ─────────────────────────────────────────────────────────────
@@ -222,6 +223,16 @@ function TeacherDashboard() {
   const [approvalForm,     setApprovalForm]      = useState({ status: "approved", remarks: "", mini_project_status: "" });
   const [expandedStudents, setExpandedStudents]  = useState({});
 
+  // ADDED: Assignment state
+  const [myAssignments,       setMyAssignments]       = useState([]);
+  const [assignmentsLoading,  setAssignmentsLoading]  = useState(false);
+  const [creatingAssignment,  setCreatingAssignment]  = useState(false);
+  const [newAssignmentForm,   setNewAssignmentForm]    = useState({ subject_id: "", title: "", description: "", due_date: "", checklist_item_id: "" });
+  const [selectedAssignment,  setSelectedAssignment]  = useState(null);
+  const [submissions,         setSubmissions]         = useState([]);
+  const [submissionsLoading,  setSubmissionsLoading]  = useState(false);
+  const [reviewForm,          setReviewForm]          = useState({});
+
   const ITEM_TYPES = ["Assignment","TA1","TA2","JA1","JA2","Open Assessment","Repeat TA","Remedial Task","Attendance","Exam","Custom"];
 
   // Quick-add state
@@ -348,10 +359,13 @@ function TeacherDashboard() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "subjects" || activeTab === "checklist" || activeTab === "approvals") {
+    if (activeTab === "subjects" || activeTab === "checklist" || activeTab === "approvals" || activeTab === "assignments") {
       loadMySubjects();
     }
-  }, [activeTab, loadMySubjects]);
+    if (activeTab === "assignments") {
+      loadMyAssignments();
+    }
+  }, [activeTab, loadMySubjects, loadMyAssignments]);
 
   const loadChecklist = useCallback(async (subjectId) => {
     if (!subjectId) return;
@@ -365,6 +379,58 @@ function TeacherDashboard() {
   useEffect(() => {
     if (selectedSubject && activeTab === "checklist") loadChecklist(selectedSubject.id);
   }, [selectedSubject, activeTab, loadChecklist]);
+
+  // Load checklist items when the new-assignment form's subject changes
+  useEffect(() => {
+    if (newAssignmentForm.subject_id) loadChecklist(Number(newAssignmentForm.subject_id));
+  }, [newAssignmentForm.subject_id, loadChecklist]);
+
+  // ADDED: Assignment callbacks
+  const loadMyAssignments = useCallback(async () => {
+    try {
+      setAssignmentsLoading(true);
+      const res = await API.get("/api/assignments/my-assignments");
+      setMyAssignments(res.data.assignments || []);
+    } catch { /* silent */ } finally { setAssignmentsLoading(false); }
+  }, []);
+
+  const loadSubmissions = useCallback(async (assignmentId) => {
+    try {
+      setSubmissionsLoading(true);
+      const res = await API.get(`/api/assignments/${assignmentId}/submissions`);
+      setSubmissions(res.data.students || []);
+    } catch { addToast("Failed to load submissions", "error"); } finally { setSubmissionsLoading(false); }
+  }, [addToast]);
+
+  const handleCreateAssignment = async () => {
+    const { subject_id, title, description, due_date, checklist_item_id } = newAssignmentForm;
+    try {
+      setCreatingAssignment(true);
+      await API.post("/api/assignments", {
+        subject_id:        Number(subject_id),
+        title,
+        description:       description || undefined,
+        due_date:          due_date    || undefined,
+        checklist_item_id: checklist_item_id ? Number(checklist_item_id) : undefined,
+      });
+      addToast("Assignment created and students notified", "success");
+      setNewAssignmentForm({ subject_id: "", title: "", description: "", due_date: "", checklist_item_id: "" });
+      loadMyAssignments();
+    } catch (err) {
+      addToast(err.response?.data?.message || "Failed to create assignment", "error");
+    } finally { setCreatingAssignment(false); }
+  };
+
+  const handleReviewSubmission = async (submissionId, status, remarks) => {
+    try {
+      await API.patch(`/api/assignments/submissions/${submissionId}/review`, { status, remarks });
+      addToast(`Submission ${status}`, status === "accepted" ? "success" : "info");
+      if (selectedAssignment) loadSubmissions(selectedAssignment.id);
+      loadMyAssignments();
+    } catch (err) {
+      addToast(err.response?.data?.message || "Failed to review", "error");
+    }
+  };
 
   const handleAddChecklistItem = async () => {
     if (!newItemForm.item_name.trim() || !selectedSubject) return;
@@ -1052,6 +1118,228 @@ function TeacherDashboard() {
                 </div>
               </>
             )}
+          </div>
+        )}
+
+        {/* ── TAB: Assignments ─────────────────────────────────────── */}
+        {activeTab === "assignments" && (
+          <div className="space-y-4">
+
+            {/* Create Assignment form */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <h2 className="text-base font-semibold text-gray-900 mb-4">Create New Assignment</h2>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Subject</label>
+                  <select
+                    value={newAssignmentForm.subject_id}
+                    onChange={e => setNewAssignmentForm(f => ({ ...f, subject_id: e.target.value, checklist_item_id: "" }))}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select subject…</option>
+                    {mySubjects.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.subject_code})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={newAssignmentForm.title}
+                    onChange={e => setNewAssignmentForm(f => ({ ...f, title: e.target.value }))}
+                    placeholder="Assignment title"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Description (optional)</label>
+                  <textarea
+                    value={newAssignmentForm.description}
+                    onChange={e => setNewAssignmentForm(f => ({ ...f, description: e.target.value }))}
+                    rows={2}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    placeholder="Instructions or details…"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Due Date (optional)</label>
+                    <input
+                      type="datetime-local"
+                      value={newAssignmentForm.due_date}
+                      onChange={e => setNewAssignmentForm(f => ({ ...f, due_date: e.target.value }))}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Link Checklist Item (optional)</label>
+                    <select
+                      value={newAssignmentForm.checklist_item_id}
+                      onChange={e => setNewAssignmentForm(f => ({ ...f, checklist_item_id: e.target.value }))}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={!newAssignmentForm.subject_id}
+                    >
+                      <option value="">None</option>
+                      {checklistItems.map(i => (
+                        <option key={i.id} value={i.id}>{i.item_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={!newAssignmentForm.subject_id || !newAssignmentForm.title.trim() || creatingAssignment}
+                  onClick={handleCreateAssignment}
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
+                >
+                  {creatingAssignment ? "Creating…" : "Create Assignment"}
+                </button>
+              </div>
+            </div>
+
+            {/* My Assignments list */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="text-base font-semibold text-gray-900">My Assignments</h2>
+                <button
+                  type="button"
+                  onClick={loadMyAssignments}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Refresh
+                </button>
+              </div>
+              {assignmentsLoading ? (
+                <div className="p-5 space-y-2">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />
+                  ))}
+                </div>
+              ) : myAssignments.length === 0 ? (
+                <div className="p-10 text-center text-sm text-gray-400">No assignments created yet.</div>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {myAssignments.map(asgn => (
+                    <div
+                      key={asgn.id}
+                      className={`px-5 py-3.5 cursor-pointer transition-colors ${selectedAssignment?.id === asgn.id ? "bg-blue-50" : "hover:bg-slate-50/50"}`}
+                      onClick={() => {
+                        setSelectedAssignment(asgn);
+                        loadSubmissions(asgn.id);
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{asgn.title}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {asgn.subject_name}
+                            {asgn.due_date && ` · Due ${new Date(asgn.due_date).toLocaleDateString("en-IN")}`}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 text-xs shrink-0 ml-3">
+                          <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">
+                            {asgn.pending_review} pending
+                          </span>
+                          <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+                            {asgn.accepted} accepted
+                          </span>
+                          {Number(asgn.rejected) > 0 && (
+                            <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">
+                              {asgn.rejected} rejected
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Submissions panel */}
+            {selectedAssignment && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">{selectedAssignment.title}</h2>
+                    <p className="text-xs text-gray-400 mt-0.5">{selectedAssignment.subject_name} · Submissions</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedAssignment(null); setSubmissions([]); }}
+                    className="text-gray-400 hover:text-gray-700 text-xl leading-none"
+                    aria-label="Close"
+                  >×</button>
+                </div>
+                {submissionsLoading ? (
+                  <div className="p-5 space-y-2">
+                    {[1, 2, 3].map(i => <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse" />)}
+                  </div>
+                ) : submissions.length === 0 ? (
+                  <div className="p-8 text-center text-sm text-gray-400">No students enrolled for this subject.</div>
+                ) : (
+                  <div className="divide-y divide-gray-50">
+                    {submissions.map(stu => (
+                      <div key={stu.student_id} className="px-5 py-3.5 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-900">{stu.student_name}</p>
+                            <p className="text-xs text-gray-400">{stu.email}{stu.roll_number ? ` · ${stu.roll_number}` : ""}</p>
+                          </div>
+                          <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 ml-2 ${
+                            !stu.submission_id ? "bg-gray-100 text-gray-500"
+                            : stu.submission_status === "accepted" ? "bg-green-100 text-green-700"
+                            : stu.submission_status === "rejected" ? "bg-red-100 text-red-700"
+                            : "bg-amber-100 text-amber-700"
+                          }`}>
+                            {!stu.submission_id ? "Not submitted" : stu.submission_status}
+                          </span>
+                        </div>
+
+                        {/* Review controls — only when submitted */}
+                        {stu.submission_id && stu.submission_status === "submitted" && (
+                          <div className="flex gap-2 flex-wrap mt-1">
+                            <input
+                              type="text"
+                              placeholder="Optional remarks…"
+                              value={reviewForm[stu.submission_id]?.remarks || ""}
+                              onChange={e =>
+                                setReviewForm(f => ({
+                                  ...f,
+                                  [stu.submission_id]: { ...f[stu.submission_id], remarks: e.target.value },
+                                }))
+                              }
+                              className="flex-1 min-w-[120px] px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleReviewSubmission(stu.submission_id, "accepted", reviewForm[stu.submission_id]?.remarks)}
+                              className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors"
+                            >
+                              Accept
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleReviewSubmission(stu.submission_id, "rejected", reviewForm[stu.submission_id]?.remarks)}
+                              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-colors"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Remarks when already reviewed */}
+                        {stu.submission_id && stu.submission_status !== "submitted" && stu.remarks && (
+                          <p className="text-xs text-gray-500 italic">Remark: {stu.remarks}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         )}
 

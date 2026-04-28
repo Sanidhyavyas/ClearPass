@@ -82,6 +82,8 @@ function AdminDashboard() {
   const [feesLoading, setFeesLoading] = useState(false);
   const [feeRemarksMap, setFeeRemarksMap] = useState({});
   const [processingFee, setProcessingFee] = useState(null);
+  const [feeSearch, setFeeSearch] = useState("");
+  const [feeStatusFilter, setFeeStatusFilter] = useState("all");
   // Direct approve state (All Requests tab)
   const [directRemarksMap, setDirectRemarksMap] = useState({});
   const [processingDirect, setProcessingDirect] = useState(null);
@@ -159,8 +161,8 @@ function AdminDashboard() {
     finally { setFeesLoading(false); }
   };
 
-  const handleFeeApproval = async (requestId, status) => {
-    const remarks = feeRemarksMap[requestId] || "";
+  const handleFeeApproval = async (requestId, status, overrideRemarks) => {
+    const remarks = overrideRemarks !== undefined ? overrideRemarks : (feeRemarksMap[requestId] || "");
     if (status === "rejected" && !remarks.trim()) {
       addToast("Please provide a reason for rejection.", "warning"); return;
     }
@@ -391,98 +393,172 @@ function AdminDashboard() {
           )}
 
           {/* FEES APPROVAL */}
-          {activeKey === "fees" && (
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 text-white">
-                <h1 className="text-2xl font-bold">Fees Approval</h1>
-                <p className="text-emerald-100 text-sm mt-1">Review and approve or reject student fee payments.</p>
+          {activeKey === "fees" && (() => {
+            const pendingFeeCount  = feesRequests.filter((r) => (r.fee_status || "pending") === "pending").length;
+            const approvedFeeCount = feesRequests.filter((r) => r.fee_status === "approved").length;
+            const rejectedFeeCount = feesRequests.filter((r) => r.fee_status === "rejected").length;
+            const filteredFees = feesRequests.filter((r) => {
+              const q = feeSearch.trim().toLowerCase();
+              const matchSearch = !q
+                || (r.student_name || "").toLowerCase().includes(q)
+                || (r.student_email || "").toLowerCase().includes(q)
+                || (r.roll_number || "").toLowerCase().includes(q)
+                || (r.department || "").toLowerCase().includes(q);
+              const feeStatus = r.fee_status || "pending";
+              const matchStatus = feeStatusFilter === "all" || feeStatus === feeStatusFilter;
+              return matchSearch && matchStatus;
+            });
+            return (
+              <div className="space-y-4">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 text-white">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                      <h1 className="text-2xl font-bold">Fees Approval</h1>
+                      <p className="text-emerald-100 text-sm mt-1">Review and approve or reject student fee payments.</p>
+                    </div>
+                    <button type="button" onClick={loadFees} className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold rounded-lg transition-colors">
+                      ↻ Refresh
+                    </button>
+                  </div>
+                  {/* Summary pills */}
+                  <div className="flex gap-3 mt-4 flex-wrap">
+                    <span className="px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold">{feesRequests.length} Total</span>
+                    <span className="px-3 py-1 rounded-full bg-amber-400/30 text-white text-xs font-semibold">{pendingFeeCount} Pending</span>
+                    <span className="px-3 py-1 rounded-full bg-green-400/30 text-white text-xs font-semibold">{approvedFeeCount} Approved</span>
+                    <span className="px-3 py-1 rounded-full bg-red-400/30 text-white text-xs font-semibold">{rejectedFeeCount} Rejected</span>
+                  </div>
+                </div>
+
+                {/* Filters */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <input
+                      type="text"
+                      value={feeSearch}
+                      onChange={(e) => setFeeSearch(e.target.value)}
+                      placeholder="Search by name, roll no., department…"
+                      className={`${inputClass} pl-9`}
+                      aria-label="Search fee requests"
+                    />
+                  </div>
+                  <select
+                    value={feeStatusFilter}
+                    onChange={(e) => setFeeStatusFilter(e.target.value)}
+                    className="px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:w-44"
+                    aria-label="Filter by fee status"
+                  >
+                    <option value="all">All statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+
+                {/* Table */}
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                  {feesLoading ? (
+                    <div className="p-10 text-center text-slate-400 text-sm animate-pulse">Loading…</div>
+                  ) : filteredFees.length === 0 ? (
+                    <EmptyState
+                      title={feesRequests.length === 0 ? "No clearance requests" : "No results"}
+                      desc={feesRequests.length === 0 ? "Students need to submit a clearance request first." : "Try adjusting your search or filter."}
+                    />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm" aria-label="Fee approval table">
+                        <THead cols={["Student", "Roll No.", "Dept", "Sem / Year", "Submitted", "Fee Status", "Actions"]} />
+                        <tbody className="divide-y divide-slate-100">
+                          {filteredFees.map((r) => {
+                            const feeStatus = r.fee_status || "pending";
+                            const feePill =
+                              feeStatus === "approved" ? "bg-green-100 text-green-700"
+                              : feeStatus === "rejected" ? "bg-red-100 text-red-700"
+                              : "bg-amber-100 text-amber-700";
+                            const isProcessing = processingFee === r.id;
+                            return (
+                              <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
+                                {/* Student */}
+                                <td className="px-4 py-3">
+                                  <p className="font-medium text-slate-800">{r.student_name || "—"}</p>
+                                  <p className="text-xs text-slate-400">{r.student_email || ""}</p>
+                                </td>
+                                {/* Roll No. */}
+                                <td className="px-4 py-3">
+                                  <span className="font-mono text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{r.roll_number || "—"}</span>
+                                </td>
+                                {/* Department */}
+                                <td className="px-4 py-3 text-slate-600">{r.department || "—"}</td>
+                                {/* Sem / Year */}
+                                <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{r.semester || "—"} / {r.year || "—"}</td>
+                                {/* Submitted */}
+                                <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{r.created_at ? new Date(r.created_at).toLocaleDateString() : "—"}</td>
+                                {/* Fee Status */}
+                                <td className="px-4 py-3">
+                                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${feePill}`}>{feeStatus}</span>
+                                  {feeStatus === "rejected" && r.fee_remarks && (
+                                    <p className="text-xs text-red-500 mt-1 max-w-[140px] truncate" title={r.fee_remarks}>{r.fee_remarks}</p>
+                                  )}
+                                  {feeStatus === "approved" && r.fee_approved_by_name && (
+                                    <p className="text-xs text-slate-400 mt-1">by {r.fee_approved_by_name}</p>
+                                  )}
+                                </td>
+                                {/* Actions */}
+                                <td className="px-4 py-3">
+                                  {feeStatus !== "approved" && (
+                                    <div className="flex flex-col gap-1.5">
+                                      <div className="flex gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleFeeApproval(r.id, "approved")}
+                                          disabled={isProcessing}
+                                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors"
+                                          title="Approve fee"
+                                        >
+                                          {isProcessing ? "…" : "✓ Approve"}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleFeeApproval(r.id, "rejected")}
+                                          disabled={isProcessing}
+                                          className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold rounded-lg transition-colors"
+                                          title="Reject fee"
+                                        >
+                                          ✕ Reject
+                                        </button>
+                                      </div>
+                                      <input
+                                        type="text"
+                                        value={feeRemarksMap[r.id] || ""}
+                                        onChange={(e) => setFeeRemarksMap((m) => ({ ...m, [r.id]: e.target.value }))}
+                                        placeholder="Rejection reason (required to reject)…"
+                                        className="px-2 py-1 text-xs border border-slate-200 rounded w-52 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                                      />
+                                    </div>
+                                  )}
+                                  {feeStatus === "approved" && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleFeeApproval(r.id, "rejected", "Revoked by admin")}
+                                      disabled={isProcessing}
+                                      className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-colors"
+                                    >
+                                      {isProcessing ? "…" : "Revoke"}
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
-              {feesLoading ? (
-                <div className="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-400 text-sm animate-pulse">Loading…</div>
-              ) : feesRequests.length === 0 ? (
-                <div className="bg-white rounded-xl border border-slate-200">
-                  <EmptyState title="No clearance requests" desc="Students need to submit a clearance request first." />
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {feesRequests.map((r) => {
-                    const feeStatus = r.fee_status || "pending";
-                    const feePill =
-                      feeStatus === "approved" ? "bg-green-100 text-green-700"
-                      : feeStatus === "rejected" ? "bg-red-100 text-red-700"
-                      : "bg-amber-100 text-amber-700";
-                    return (
-                      <div key={r.id} className="bg-white rounded-xl border border-slate-200 p-5">
-                        <div className="flex items-start justify-between gap-4 flex-wrap">
-                          <div>
-                            <p className="font-semibold text-slate-800">{r.student_name}</p>
-                            <p className="text-xs text-slate-500">{r.student_email} · {r.department || "—"} · {r.roll_number || "—"}</p>
-                            <p className="text-xs text-slate-400 mt-1">
-                              Sem {r.semester || "—"} · Year {r.year || "—"} · Submitted {r.created_at ? new Date(r.created_at).toLocaleDateString() : "—"}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${feePill}`}>
-                              Fee: {feeStatus}
-                            </span>
-                            {r.fee_approved_at && (
-                              <span className="text-xs text-slate-400">{new Date(r.fee_approved_at).toLocaleDateString()}</span>
-                            )}
-                          </div>
-                        </div>
-                        {feeStatus === "rejected" && r.fee_remarks && (
-                          <p className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg mt-2">Reason: {r.fee_remarks}</p>
-                        )}
-                        {feeStatus !== "approved" && (
-                          <div className="mt-4 space-y-2">
-                            <textarea
-                              value={feeRemarksMap[r.id] || ""}
-                              onChange={(e) => setFeeRemarksMap((m) => ({ ...m, [r.id]: e.target.value }))}
-                              placeholder="Remarks / rejection reason (required for rejection)…"
-                              rows={2}
-                              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            />
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleFeeApproval(r.id, "approved")}
-                                disabled={processingFee === r.id}
-                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
-                              >
-                                {processingFee === r.id ? "Processing…" : "✓ Approve Fee"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleFeeApproval(r.id, "rejected")}
-                                disabled={processingFee === r.id}
-                                className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-sm font-semibold rounded-lg transition-colors"
-                              >
-                                ✕ Reject Fee
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        {feeStatus === "approved" && (
-                          <div className="mt-3 flex items-center gap-2">
-                            <span className="text-xs text-green-600 font-medium">Fee approved</span>
-                            {r.fee_approved_by_name && <span className="text-xs text-slate-400">by {r.fee_approved_by_name}</span>}
-                            <button
-                              type="button"
-                              onClick={() => handleFeeApproval(r.id, "rejected")}
-                              disabled={processingFee === r.id}
-                              className="ml-auto px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-colors"
-                            >
-                              Revoke
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
+            );
+          })()}
 
           {/* FINALIZE QUEUE */}
           {activeKey === "finalize" && (
