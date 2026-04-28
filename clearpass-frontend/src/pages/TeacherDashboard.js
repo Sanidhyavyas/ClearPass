@@ -358,6 +358,15 @@ function TeacherDashboard() {
     } catch { /* silent */ } finally { setSubjectsLoading(false); }
   }, []);
 
+  // ADDED: Assignment callbacks
+  const loadMyAssignments = useCallback(async () => {
+    try {
+      setAssignmentsLoading(true);
+      const res = await API.get("/api/assignments/my-assignments");
+      setMyAssignments(res.data.assignments || []);
+    } catch { /* silent */ } finally { setAssignmentsLoading(false); }
+  }, []);
+
   useEffect(() => {
     if (activeTab === "subjects" || activeTab === "checklist" || activeTab === "approvals" || activeTab === "assignments") {
       loadMySubjects();
@@ -384,15 +393,6 @@ function TeacherDashboard() {
   useEffect(() => {
     if (newAssignmentForm.subject_id) loadChecklist(Number(newAssignmentForm.subject_id));
   }, [newAssignmentForm.subject_id, loadChecklist]);
-
-  // ADDED: Assignment callbacks
-  const loadMyAssignments = useCallback(async () => {
-    try {
-      setAssignmentsLoading(true);
-      const res = await API.get("/api/assignments/my-assignments");
-      setMyAssignments(res.data.assignments || []);
-    } catch { /* silent */ } finally { setAssignmentsLoading(false); }
-  }, []);
 
   const loadSubmissions = useCallback(async (assignmentId) => {
     try {
