@@ -266,6 +266,53 @@ const createUser = async (req, res, next) => {
         "INSERT INTO students (user_id, student_code, tgc) VALUES ($1, $2, 0)",
         [userId, student_code]
       );
+
+      // Auto-create TGC certificate + subject_approvals + checklist_progress
+      // so the student appears in every teacher's TGC dashboard immediately.
+      const DEFAULT_SEMESTER   = 6;
+      const DEFAULT_ACAD_YEAR  = "2025-26";
+
+      const { rows: [certificate] } = await connection.query(
+        `INSERT INTO term_grant_certificates (student_id, semester, academic_year)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (student_id, semester, academic_year)
+           DO UPDATE SET created_at = term_grant_certificates.created_at
+         RETURNING *`,
+        [userId, DEFAULT_SEMESTER, DEFAULT_ACAD_YEAR]
+      );
+
+      const { rows: tgcSubjects } = await connection.query(
+        "SELECT id FROM subjects WHERE is_tgc = TRUE AND tgc_semester = $1 AND academic_year = $2",
+        [DEFAULT_SEMESTER, DEFAULT_ACAD_YEAR]
+      );
+
+      for (const subject of tgcSubjects) {
+        const { rows: teachers } = await connection.query(
+          "SELECT teacher_id FROM subject_teacher_assignments WHERE subject_id = $1 LIMIT 1",
+          [subject.id]
+        );
+        const teacherId = teachers.length > 0 ? teachers[0].teacher_id : null;
+
+        await connection.query(
+          `INSERT INTO subject_approvals (certificate_id, student_id, subject_id, teacher_id)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (certificate_id, subject_id) DO NOTHING`,
+          [certificate.id, userId, subject.id, teacherId]
+        );
+
+        const { rows: checklistItems } = await connection.query(
+          "SELECT id FROM checklist_templates WHERE subject_id = $1",
+          [subject.id]
+        );
+        for (const item of checklistItems) {
+          await connection.query(
+            `INSERT INTO student_checklist_progress (student_id, checklist_item_id, subject_id)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (student_id, checklist_item_id) DO NOTHING`,
+            [userId, item.id, subject.id]
+          );
+        }
+      }
     } else if (role === "teacher") {
       await connection.query(
         "INSERT INTO teachers (user_id, department_id) VALUES ($1, NULL)",

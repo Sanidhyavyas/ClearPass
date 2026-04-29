@@ -95,6 +95,27 @@ const assignTeacher = async (req, res, next) => {
        RETURNING *`,
       [subjectId, teacher_id, req.user.id]
     );
+
+    // Update existing subject_approvals for this subject to point to the new teacher
+    await db.query(
+      `UPDATE subject_approvals SET teacher_id = $1
+       WHERE subject_id = $2`,
+      [teacher_id, subjectId]
+    );
+
+    // Also create subject_approvals for any students who have a TGC cert but no approval row for this subject
+    await db.query(
+      `INSERT INTO subject_approvals (certificate_id, student_id, subject_id, teacher_id)
+       SELECT tgc.id, tgc.student_id, $1, $2
+       FROM term_grant_certificates tgc
+       WHERE NOT EXISTS (
+         SELECT 1 FROM subject_approvals sa
+         WHERE sa.certificate_id = tgc.id AND sa.subject_id = $1
+       )
+       ON CONFLICT (certificate_id, subject_id) DO NOTHING`,
+      [subjectId, teacher_id]
+    );
+
     return res.status(201).json({ message: "Teacher assigned", assignment });
   } catch (err) {
     return next(err);
@@ -1148,6 +1169,80 @@ const updateCertificateFlags = async (req, res, next) => {
   }
 };
 
+/**
+ * POST /api/subjects/backfill-tgc  (admin/super_admin)
+ * Creates TGC certificate + subject_approvals + checklist_progress for every
+ * existing student who does not already have a TGC record.
+ */
+const backfillStudentTGC = async (req, res, next) => {
+  try {
+    const DEFAULT_SEMESTER  = 6;
+    const DEFAULT_ACAD_YEAR = "2025-26";
+
+    const { rows: students } = await db.query(
+      `SELECT u.id FROM users u
+       WHERE u.role = 'student'
+         AND NOT EXISTS (
+           SELECT 1 FROM term_grant_certificates tgc
+           WHERE tgc.student_id = u.id
+             AND tgc.semester = $1
+             AND tgc.academic_year = $2
+         )`,
+      [DEFAULT_SEMESTER, DEFAULT_ACAD_YEAR]
+    );
+
+    const { rows: tgcSubjects } = await db.query(
+      "SELECT id FROM subjects WHERE is_tgc = TRUE AND tgc_semester = $1 AND academic_year = $2",
+      [DEFAULT_SEMESTER, DEFAULT_ACAD_YEAR]
+    );
+
+    let created = 0;
+    for (const student of students) {
+      const { rows: [certificate] } = await db.query(
+        `INSERT INTO term_grant_certificates (student_id, semester, academic_year)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (student_id, semester, academic_year)
+           DO UPDATE SET created_at = term_grant_certificates.created_at
+         RETURNING *`,
+        [student.id, DEFAULT_SEMESTER, DEFAULT_ACAD_YEAR]
+      );
+
+      for (const subject of tgcSubjects) {
+        const { rows: teachers } = await db.query(
+          "SELECT teacher_id FROM subject_teacher_assignments WHERE subject_id = $1 LIMIT 1",
+          [subject.id]
+        );
+        const teacherId = teachers.length > 0 ? teachers[0].teacher_id : null;
+
+        await db.query(
+          `INSERT INTO subject_approvals (certificate_id, student_id, subject_id, teacher_id)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (certificate_id, subject_id) DO NOTHING`,
+          [certificate.id, student.id, subject.id, teacherId]
+        );
+
+        const { rows: items } = await db.query(
+          "SELECT id FROM checklist_templates WHERE subject_id = $1",
+          [subject.id]
+        );
+        for (const item of items) {
+          await db.query(
+            `INSERT INTO student_checklist_progress (student_id, checklist_item_id, subject_id)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (student_id, checklist_item_id) DO NOTHING`,
+            [student.id, item.id, subject.id]
+          );
+        }
+      }
+      created++;
+    }
+
+    return res.json({ message: `Backfill complete. Created TGC records for ${created} student(s).`, created });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   // Subject management
   createTGCSubject,
@@ -1175,4 +1270,5 @@ module.exports = {
   getTermGrantAnalytics,
   getAllStudentsWithCertStatus,
   getMyAssignedSubjects,
+  backfillStudentTGC,
 };

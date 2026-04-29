@@ -249,6 +249,15 @@ function AdminDashboard() {
     } finally { setCreating(false); }
   };
 
+  const handleBackfillTGC = async () => {
+    try {
+      const res = await API.post("/api/subjects/backfill-tgc");
+      addToast(res.data.message, "success");
+    } catch (err) {
+      addToast(err.response?.data?.message || "TGC backfill failed.", "error");
+    }
+  };
+
   const handleAssignTeacher = async (requestId) => {
     const teacherId = assignmentMap[requestId];
     if (!teacherId) { addToast("Please choose a teacher before assigning.", "warning"); return; }
@@ -648,6 +657,14 @@ function AdminDashboard() {
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
                 >
                   {showCreateUser ? "Cancel" : "+ Create User"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBackfillTGC}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                  title="Create TGC records for any existing students who are missing them"
+                >
+                  Sync TGC for Existing Students
                 </button>
               </div>
 

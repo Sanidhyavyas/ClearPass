@@ -8,6 +8,7 @@ const {
   listTGCSubjects,
   getSubjectsBySemester,
   deleteTGCSubject,
+  backfillStudentTGC,
 } = require("../controllers/tgcController");
 
 const router = express.Router();
@@ -21,6 +22,12 @@ router.post(
   "/create",
   authorizeRoles("admin", "super_admin"),
   createTGCSubject
+);
+
+router.post(
+  "/backfill-tgc",
+  authorizeRoles("admin", "super_admin"),
+  backfillStudentTGC
 );
 
 router.post(
