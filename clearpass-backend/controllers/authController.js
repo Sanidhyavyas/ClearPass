@@ -31,16 +31,14 @@ const buildAuthResponse = (user, authSource = "users") => {
 
 const register = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
+    // Public registration is restricted to students only.
+    const role = "student";
 
-    if (!name || !email || !password || !role) {
+    if (!name || !email || !password) {
       return res
         .status(400)
-        .json({ message: "Name, email, password, and role are required" });
-    }
-
-    if (!VALID_ROLES.includes(role)) {
-      return res.status(400).json({ message: "Invalid role selected" });
+        .json({ message: "Name, email, and password are required" });
     }
 
     const normalizedEmail = email.trim().toLowerCase();

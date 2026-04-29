@@ -8,12 +8,6 @@ import { getDefaultRoute, saveAuth } from "../utils/auth";
 
 const initialForm = { name: "", email: "", password: "", role: "student" };
 
-const ROLE_INFO = {
-  student:  { label: "Student",  desc: "Submit clearance requests and track approval." },
-  teacher:  { label: "Teacher",  desc: "Review and respond to assigned requests."      },
-  admin:    { label: "Admin",    desc: "Manage users, assign requests, view reports."   },
-};
-
 function Register() {
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
@@ -64,26 +58,14 @@ function Register() {
           <div className="mb-10">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-medium mb-5">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-400" aria-hidden="true" />
-              Create Your Account
+              Student Registration
             </span>
             <h1 className="text-3xl xl:text-4xl font-bold text-white leading-tight mb-4">
-              Pick your role and jump straight in
+              Submit and track your clearance requests
             </h1>
             <p className="text-slate-400 text-base leading-relaxed">
-              Your dashboard is automatically configured based on the role you choose.
+              Create your student account to submit clearance requests and monitor their approval status.
             </p>
-          </div>
-
-          <div className="space-y-3">
-            {Object.entries(ROLE_INFO).map(([key, { label, desc }]) => (
-              <div key={key} className={`flex items-start gap-3 p-4 rounded-xl border transition-all duration-150 ${form.role === key ? "bg-blue-600/20 border-blue-500/50" : "bg-white/5 border-white/10"}`}>
-                <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${form.role === key ? "bg-blue-400" : "bg-slate-500"}`} aria-hidden="true" />
-                <div>
-                  <p className={`text-sm font-semibold ${form.role === key ? "text-blue-300" : "text-white"}`}>{label}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{desc}</p>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
         <p className="relative z-10 text-xs text-slate-500">© {new Date().getFullYear()} ClearPass — Academic Clearance System</p>
@@ -120,7 +102,7 @@ function Register() {
 
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Create account</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Choose your role and get started instantly</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Register as a student to get started</p>
           </div>
 
           {error && (
@@ -133,28 +115,6 @@ function Register() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            {/* Role selector */}
-            <div>
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">I am a…</p>
-              <div className="grid grid-cols-3 gap-2">
-                {Object.entries(ROLE_INFO).map(([key, { label }]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setForm((c) => ({ ...c, role: key }))}
-                    className={`py-2.5 px-3 rounded-lg text-sm font-medium border transition-all duration-150 ${
-                      form.role === key
-                        ? "bg-blue-600 border-blue-600 text-white shadow-sm"
-                        : "bg-white border-slate-300 text-slate-600 hover:border-blue-400 hover:text-blue-600"
-                    }`}
-                    aria-pressed={form.role === key}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1.5">Full name</label>
               <input id="name" type="text" name="name" value={form.name} onChange={handleChange} placeholder="Your full name" required autoComplete="name" className={inputClass} />
