@@ -1,5 +1,6 @@
 const express = require("express");
 const { authorizeRoles, verifyToken } = require("../middleware/authMiddleware");
+const { validateSemesterParams } = require("../middleware/semesterMiddleware");
 const { getAnalyticsOverview } = require("../controllers/analyticsController");
 // ADDED: TGC analytics
 const { getTermGrantAnalytics } = require("../controllers/tgcController");
@@ -10,6 +11,7 @@ router.get(
   "/overview",
   verifyToken,
   authorizeRoles("admin", "super_admin"),
+  validateSemesterParams,
   getAnalyticsOverview
 );
 

@@ -5,6 +5,7 @@ import DashboardLayout from "../components/DashboardLayout";
 import RequestsTable from "../components/RequestsTable";
 import RejectModal from "../components/RejectModal";
 import StudentDetailDrawer from "../components/StudentDetailDrawer";
+import SemesterSwitcher from "../components/SemesterSwitcher";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import API from "../services/api";
@@ -104,7 +105,7 @@ function NotificationsBell({ count, notifications, open, onToggle, onMarkAllRead
 }
 
 // ── Filter Bar ────────────────────────────────────────────────────────────
-function FilterBar({ search, onSearchChange, semester, onSemesterChange, year, onYearChange, status, onStatusChange, onClear }) {
+function FilterBar({ search, onSearchChange, semester, onSemesterChange, year, onYearChange, status, onStatusChange, onClear, allowedPairs }) {
   const hasFilters = search || semester || year || status;
   return (
     <div className="flex flex-wrap gap-2 items-center">
@@ -122,25 +123,13 @@ function FilterBar({ search, onSearchChange, semester, onSemesterChange, year, o
         />
       </div>
 
-      {/* Semester */}
-      <select
-        value={semester}
-        onChange={(e) => onSemesterChange(e.target.value)}
-        className="rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="">All Semesters</option>
-        {[1,2,3,4,5,6,7,8].map((s) => <option key={s} value={s}>Semester {s}</option>)}
-      </select>
-
-      {/* Year */}
-      <select
-        value={year}
-        onChange={(e) => onYearChange(e.target.value)}
-        className="rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="">All Years</option>
-        {[1,2,3,4].map((y) => <option key={y} value={y}>Year {y}</option>)}
-      </select>
+      {/* Year + Semester via SemesterSwitcher */}
+      <SemesterSwitcher
+        year={year ? parseInt(year, 10) : null}
+        semester={semester ? parseInt(semester, 10) : null}
+        allowedPairs={allowedPairs}
+        onChange={(y, s) => { onYearChange(y ?? ""); onSemesterChange(s ?? ""); }}
+      />
 
       {/* Status */}
       <select
@@ -188,6 +177,9 @@ function TeacherDashboard() {
   const [requests, setRequests] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // ADDED: assigned semester pairs for this teacher
+  const [assignedSemesters, setAssignedSemesters] = useState(null);
 
   // Filters
   const [search, setSearch]       = useState("");
@@ -288,6 +280,16 @@ function TeacherDashboard() {
       setLoading(false);
     }
   }, [page, debouncedSearch, filterSemester, filterYear, filterStatus, addToast]);
+
+  // Fetch assigned semester pairs once on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await API.get("/api/teacher/semesters");
+        setAssignedSemesters(res.data.data || null);
+      } catch { /* silent */ }
+    })();
+  }, []);
 
   // Initial load
   useEffect(() => {
@@ -659,6 +661,7 @@ function TeacherDashboard() {
               year={filterYear}         onYearChange={setFilterYear}
               status={filterStatus}     onStatusChange={setFilterStatus}
               onClear={clearFilters}
+              allowedPairs={assignedSemesters}
             />
             <RequestsTable
               requests={requests}

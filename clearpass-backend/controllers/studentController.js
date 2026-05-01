@@ -4,19 +4,31 @@ const MODULE_NAMES = ["library", "accounts", "hostel", "department"];
 
 /**
  * GET /api/student/clearance/status
- * Returns latest clearance request + all 4 module statuses + overall_progress %.
+ * Returns the latest clearance request for the student's current semester,
+ * all 4 module statuses, and an overall_progress %.
+ * Also returns the student's academic placement (year, semester).
  */
 const getClearanceStatus = async (req, res, next) => {
   try {
     const studentId = req.user.id;
+    const studentYear     = req.user.year     || null;
+    const studentSemester = req.user.semester || null;
+
+    // Filter to the student's own year/semester when available
+    const semFilter = studentYear && studentSemester
+      ? " AND year = $2 AND semester = $3"
+      : "";
+    const semParams = studentYear && studentSemester
+      ? [studentId, studentYear, studentSemester]
+      : [studentId];
 
     const { rows: requests } = await db.query(
       `SELECT *, COALESCE(submitted_at, created_at) AS submitted_at
        FROM clearance_requests
-       WHERE student_id = $1
+       WHERE student_id = $1${semFilter}
        ORDER BY COALESCE(submitted_at, created_at) DESC
        LIMIT 1`,
-      [studentId]
+      semParams
     );
 
     const { rows: modules } = await db.query(
@@ -44,6 +56,8 @@ const getClearanceStatus = async (req, res, next) => {
         modules:          allModules,
         overall_progress: overallProgress,
         status_label:     statusLabel,
+        year:             studentYear,
+        semester:         studentSemester,
       },
       message: "Clearance status fetched",
     });
@@ -114,14 +128,13 @@ const getClearanceModules = async (req, res, next) => {
 
 /**
  * GET /api/student/profile
- * Returns student_code, tgc, name, email for the logged-in student.
- * ADDED
+ * Returns student_code, tgc, name, email, year, semester for the logged-in student.
  */
 const getProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { rows } = await db.query(
-      `SELECT u.name, u.email, s.student_code, s.tgc
+      `SELECT u.name, u.email, u.year, u.semester, s.student_code, s.tgc
        FROM users u
        JOIN students s ON s.user_id = u.id
        WHERE u.id = $1

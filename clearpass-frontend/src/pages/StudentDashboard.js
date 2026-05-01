@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import DashboardLayout from "../components/DashboardLayout";
+import SemesterBadge from "../components/SemesterBadge";
 import { useToast } from "../context/ToastContext";
 import API from "../services/api";
 
@@ -264,7 +265,7 @@ export default function StudentDashboard() {
   const handleRequestTGC = async () => {
     try {
       setTgcRequesting(true);
-      await API.post("/api/certificate/request", { semester: 6, academic_year: "2025-26" });
+      await API.post("/api/certificate/request", { semester: profile?.semester ?? 6, academic_year: "2025-26" });
       addToast("Certificate request submitted!", "success");
       loadTGC();
     } catch (err) {
@@ -337,9 +338,8 @@ export default function StudentDashboard() {
                       <p className="text-blue-200 text-sm">{profile?.email || "—"}</p>
                     </div>
                   </div>
-                  <div className="flex gap-3 flex-wrap">
+                  <div className="flex gap-3 flex-wrap items-center">
                     {[
-                      ["Year",       "TY | Sem 6"],
                       ["AY",         "2025-26"],
                       ["Roll No.",   profile?.roll_number  || "—"],
                       ["Student ID", profile?.student_code || "—"],
@@ -349,6 +349,14 @@ export default function StudentDashboard() {
                         <p className="text-sm font-bold mt-0.5">{val}</p>
                       </div>
                     ))}
+                    {profile?.year && profile?.semester && (
+                      <div className="bg-white/15 rounded-xl px-3 py-2 text-center">
+                        <p className="text-[10px] text-blue-200 uppercase tracking-wide font-medium">Year / Sem</p>
+                        <div className="mt-1">
+                          <SemesterBadge year={profile.year} semester={profile.semester} size="sm" />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -366,7 +374,7 @@ export default function StudentDashboard() {
                     </svg>
                   </div>
                   <h3 className="text-base font-semibold text-gray-800">Term Grant Certificate</h3>
-                  <p className="text-sm text-gray-500 mt-1 mb-5">Submit your request to start the TGC clearance process for Semester 6.</p>
+                  <p className="text-sm text-gray-500 mt-1 mb-5">Submit your request to start the TGC clearance process{profile?.semester ? ` for Semester ${profile.semester}` : ""}.</p>
                   <button
                     type="button"
                     onClick={handleRequestTGC}

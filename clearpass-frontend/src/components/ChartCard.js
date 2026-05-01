@@ -131,10 +131,40 @@ export function ModuleBarChart({ moduleStats = [] }) {
 }
 
 /**
- * ModuleAvgChart — bar chart of avg approval hours per module.
- * Props: moduleStats = [{ module_name, avg_hours_to_approve }]
+ * SemesterBreakdownChart — grouped bar chart showing clearance stats per semester.
+ * Props: semesterBreakdown = [{ year, semester, total, approved, pending, rejected }]
  */
-export function ModuleAvgChart({ moduleStats = [] }) {
+export function SemesterBreakdownChart({ semesterBreakdown = [] }) {
+  const data = semesterBreakdown.map((s) => ({
+    name:     `Y${s.year}S${s.semester}`,
+    Approved: s.approved,
+    Pending:  s.pending,
+    Rejected: s.rejected,
+  }));
+
+  if (!data.length) return null;
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-5">
+      <h3 className="text-sm font-semibold text-slate-700 mb-4">Clearance Stats per Semester</h3>
+      <ResponsiveContainer width="100%" height={240}>
+        <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+          <Tooltip
+            contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", boxShadow: "0 1px 6px rgba(0,0,0,0.08)", fontSize: "12px" }}
+            cursor={{ fill: "rgba(0,0,0,0.03)" }}
+          />
+          <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: "11px", color: "#64748b" }}>{v}</span>} />
+          <Bar dataKey="Approved" fill={COLORS.approved} radius={[0, 0, 0, 0]} />
+          <Bar dataKey="Pending"  fill={COLORS.pending}  radius={[0, 0, 0, 0]} />
+          <Bar dataKey="Rejected" fill={COLORS.rejected} radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
   const data = moduleStats
     .filter((m) => m.avg_hours_to_approve > 0)
     .map((m) => ({

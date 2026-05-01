@@ -44,21 +44,29 @@ const verifyToken = async (req, res, next) => {
       return next();
     }
 
-    // Try full query (requires migration to have added department/roll_number).
-    // Fall back to basic columns so auth still works before migration is run.
+    // Fetch user including year/semester (added by multi-semester migration).
+    // Falls back to base columns if migration has not yet been applied.
     let users;
     try {
       const { rows } = await db.query(
-        "SELECT id, name, email, role, department, roll_number FROM users WHERE id = $1 LIMIT 1",
+        "SELECT id, name, email, role, department, roll_number, year, semester FROM users WHERE id = $1 LIMIT 1",
         [decoded.id]
       );
       users = rows;
     } catch {
-      const { rows } = await db.query(
-        "SELECT id, name, email, role FROM users WHERE id = $1 LIMIT 1",
-        [decoded.id]
-      );
-      users = rows;
+      try {
+        const { rows } = await db.query(
+          "SELECT id, name, email, role, department, roll_number FROM users WHERE id = $1 LIMIT 1",
+          [decoded.id]
+        );
+        users = rows;
+      } catch {
+        const { rows } = await db.query(
+          "SELECT id, name, email, role FROM users WHERE id = $1 LIMIT 1",
+          [decoded.id]
+        );
+        users = rows;
+      }
     }
 
     if (users.length === 0) {

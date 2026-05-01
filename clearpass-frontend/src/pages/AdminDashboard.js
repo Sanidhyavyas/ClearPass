@@ -1,10 +1,11 @@
 // --- ADMIN DASHBOARD ---
 import { useEffect, useState } from "react";
 
-import { ModuleAvgChart, ModuleBarChart, StatusBarChart, UserPieChart } from "../components/ChartCard";
+import { ModuleAvgChart, ModuleBarChart, SemesterBreakdownChart, StatusBarChart, UserPieChart } from "../components/ChartCard";
 import DashboardLayout from "../components/DashboardLayout";
 import { SkeletonCard, SkeletonTableRows } from "../components/LoadingSkeleton";
 import StatusBadge from "../components/StatusBadge";
+import SemesterSwitcher from "../components/SemesterSwitcher";
 import { useToast } from "../context/ToastContext";
 import API from "../services/api";
 
@@ -67,6 +68,8 @@ function AdminDashboard() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsYear, setAnalyticsYear]         = useState(null);
+  const [analyticsSemester, setAnalyticsSemester] = useState(null);
   const [pendingFinal, setPendingFinal] = useState([]);
   const [finalizing, setFinalizing] = useState(null);
   const [finalRemarks, setFinalRemarks] = useState({});
@@ -136,10 +139,13 @@ function AdminDashboard() {
     finally { setAuditLoading(false); }
   };
 
-  const loadAnalytics = async () => {
+  const loadAnalytics = async (year, semester) => {
     try {
       setAnalyticsLoading(true);
-      const res = await API.get("/api/analytics/overview");
+      const params = {};
+      if (year)     params.year     = year;
+      if (semester) params.semester = semester;
+      const res = await API.get("/api/analytics/overview", { params });
       setAnalytics(res.data);
     } catch { addToast("Could not load analytics.", "warning"); }
     finally { setAnalyticsLoading(false); }
@@ -211,7 +217,10 @@ function AdminDashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (activeKey === "audit" && auditLogs.length === 0) loadAuditLogs(); }, [activeKey]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (activeKey === "analytics" && !analytics) loadAnalytics(); }, [activeKey]);
+  useEffect(() => { if (activeKey === "analytics" && !analytics) loadAnalytics(analyticsYear, analyticsSemester); }, [activeKey]);
+  // Re-load analytics when scope changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (activeKey === "analytics") loadAnalytics(analyticsYear, analyticsSemester); }, [analyticsYear, analyticsSemester]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (activeKey === "finalize") loadPendingFinal(); }, [activeKey]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -354,8 +363,21 @@ function AdminDashboard() {
           {activeKey === "analytics" && (
             <div className="space-y-6">
               <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 text-white">
-                <h1 className="text-2xl font-bold">Analytics</h1>
-                <p className="text-indigo-100 text-sm mt-1">Module-wise clearance metrics and approval time.</p>
+                <div className="flex items-start justify-between flex-wrap gap-4">
+                  <div>
+                    <h1 className="text-2xl font-bold">Analytics</h1>
+                    <p className="text-indigo-100 text-sm mt-1">Module-wise clearance metrics and approval time.</p>
+                  </div>
+                  {/* Semester scope filter */}
+                  <div className="bg-white/15 rounded-xl px-3 py-2">
+                    <p className="text-xs text-indigo-200 mb-1.5 font-medium uppercase tracking-wide">Filter by semester</p>
+                    <SemesterSwitcher
+                      year={analyticsYear}
+                      semester={analyticsSemester}
+                      onChange={(y, s) => { setAnalyticsYear(y); setAnalyticsSemester(s); }}
+                    />
+                  </div>
+                </div>
               </div>
               {analyticsLoading ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">{[1,2,3,4].map((i) => <SkeletonCard key={i} />)}</div>
@@ -371,6 +393,10 @@ function AdminDashboard() {
                     <ModuleBarChart moduleStats={analytics.module_stats || []} />
                     <ModuleAvgChart moduleStats={analytics.module_stats || []} />
                   </div>
+                  {/* Semester breakdown chart */}
+                  {(analytics.semester_breakdown || []).length > 0 && (
+                    <SemesterBreakdownChart semesterBreakdown={analytics.semester_breakdown} />
+                  )}
                   {/* Recent audit log entries */}
                   {(analytics.recent_audit || []).length > 0 && (
                     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">

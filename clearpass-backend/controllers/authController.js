@@ -17,15 +17,24 @@ const buildAuthResponse = (user, authSource = "users") => {
     { expiresIn: "1h" }
   );
 
+  const userData = {
+    id:         user.id,
+    name:       user.name,
+    email:      user.email,
+    role:       user.role,
+    department: user.department || null,
+  };
+
+  // Include academic placement for students
+  if (user.role === "student") {
+    userData.year     = user.year     != null ? Number(user.year)     : null;
+    userData.semester = user.semester != null ? Number(user.semester) : null;
+  }
+
   return {
     message: "Authentication successful",
     token,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
+    user: userData,
   };
 };
 
@@ -53,10 +62,19 @@ const register = async (req, res, next) => {
         .json({ message: "User with this email already exists" });
     }
 
+    const { year, semester } = req.body;
+
+    // Students must have a valid year (1-4) and semester (1-8).
+    // Default to legacy values so existing integrations keep working.
+    const studentYear     = year     != null ? parseInt(year,     10) : 3;
+    const studentSemester = semester != null ? parseInt(semester, 10) : 6;
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const { rows: inserted } = await db.query(
-      "INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role",
-      [name.trim(), normalizedEmail, hashedPassword, role]
+      `INSERT INTO users (name, email, password, role, year, semester)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, name, email, role, year, semester`,
+      [name.trim(), normalizedEmail, hashedPassword, role, studentYear, studentSemester]
     );
 
     return res.status(201).json(buildAuthResponse(inserted[0]));
@@ -77,7 +95,7 @@ const login = async (req, res, next) => {
 
     const normalizedEmail = email.trim().toLowerCase();
     const { rows: users } = await db.query(
-      "SELECT id, name, email, password, role FROM users WHERE email = $1 LIMIT 1",
+      "SELECT id, name, email, password, role, department, year, semester FROM users WHERE email = $1 LIMIT 1",
       [normalizedEmail]
     );
 
@@ -101,7 +119,7 @@ const login = async (req, res, next) => {
 const getCurrentUser = async (req, res, next) => {
   try {
     const { rows: users } = await db.query(
-      "SELECT id, name, email, role FROM users WHERE id = $1 LIMIT 1",
+      "SELECT id, name, email, role, department, year, semester FROM users WHERE id = $1 LIMIT 1",
       [req.user.id]
     );
 
@@ -204,7 +222,7 @@ const getAdmins = async (req, res, next) => {
 const createUser = async (req, res, next) => {
   let connection;
   try {
-    const { name, email, password, role, department = null } = req.body;
+    const { name, email, password, role, department = null, year, semester } = req.body;
 
     if (!name || !email || !password || !role) {
       return res
@@ -217,6 +235,10 @@ const createUser = async (req, res, next) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+
+    // Resolve year/semester for students (default to legacy 3/6)
+    const studentYear     = role === "student" ? (year     != null ? parseInt(year,     10) : 3) : null;
+    const studentSemester = role === "student" ? (semester != null ? parseInt(semester, 10) : 6) : null;
 
     connection = await db.connect();
     await connection.query("BEGIN");
@@ -235,8 +257,8 @@ const createUser = async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const { rows: inserted } = await connection.query(
-      `INSERT INTO users (name, email, password, role, department)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO users (name, email, password, role, department, year, semester)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id`,
       [
         name.trim(),
@@ -244,6 +266,8 @@ const createUser = async (req, res, next) => {
         hashedPassword,
         role,
         department ? department.trim() : null,
+        studentYear,
+        studentSemester,
       ]
     );
 
@@ -314,6 +338,12 @@ const createUser = async (req, res, next) => {
     } else if (role === "teacher") {
       await connection.query(
         "INSERT INTO teachers (user_id, department_id) VALUES ($1, NULL)",
+        [userId]
+      );
+      // Seed the teacher into legacy year=3/semester=6 by default
+      await connection.query(
+        `INSERT INTO teacher_semesters (teacher_id, year, semester)
+         VALUES ($1, 3, 6) ON CONFLICT (teacher_id, year, semester) DO NOTHING`,
         [userId]
       );
     }

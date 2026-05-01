@@ -1,4 +1,5 @@
 const db = require("../db");
+const { YEARS, SEMESTERS } = require("../config/constants");
 
 // Auto-mark overdue requests (pending + past deadline)
 const markOverdue = async (department) => {
@@ -21,11 +22,17 @@ const markOverdue = async (department) => {
 /**
  * GET /api/teacher/requests
  * Query: department, semester, year, status, search, page, limit
- * Scoped to req.user.department for role=teacher; admin/super_admin bypass.
+ *
+ * For role=teacher:
+ *   - If no semester/year filter is provided, returns requests across ALL
+ *     semesters the teacher is assigned to (via teacher_semesters).
+ *   - If semester/year are provided, verifies the teacher is actually assigned
+ *     to that semester before filtering.
+ * Admin/super_admin: full access, all filters optional.
  */
 const getRequests = async (req, res, next) => {
   try {
-    const { role, department: userDept } = req.user;
+    const { role, id: userId, department: userDept } = req.user;
     const { department, semester, year, status, search, page = 1, limit = 10 } = req.query;
 
     // Mark overdue before returning results
@@ -38,21 +45,61 @@ const getRequests = async (req, res, next) => {
     const conditions = [];
     const params     = [];
 
-    conditions.push("u.role = 'student'"); // FIXED: never return admin/teacher rows in student lists
+    conditions.push("u.role = 'student'");
 
-    // Department filter: enforced for teachers, optional for admins.
-    // Only filter by department if the teacher actually has one set.
-    if (role === "teacher" && userDept) {
-      conditions.push(`cr.department = $${params.length + 1}`);
-      params.push(userDept);
-    } else if (role !== "teacher" && department) {
-      conditions.push(`cr.department = $${params.length + 1}`);
-      params.push(department);
+    // ── Semester scoping for teachers ──────────────────────────────────────
+    if (role === "teacher") {
+      // Fetch all semesters this teacher is assigned to
+      const { rows: teacherSems } = await db.query(
+        "SELECT year, semester FROM teacher_semesters WHERE teacher_id = $1",
+        [userId]
+      );
+
+      if (teacherSems.length === 0) {
+        // Teacher has no semester assignments yet — return empty
+        return res.json({
+          success: true,
+          data: { requests: [], total: 0, page: pageNum, limit: limitNum, counts: {} },
+          message: "No semester assignments found for this teacher",
+        });
+      }
+
+      if (semester || year) {
+        // Validate the requested semester is in their assignment list
+        const parsedSem  = semester ? parseInt(semester, 10) : null;
+        const parsedYear = year     ? parseInt(year,     10) : null;
+        const allowed = teacherSems.some(
+          (s) =>
+            (parsedSem  == null || s.semester === parsedSem) &&
+            (parsedYear == null || s.year     === parsedYear)
+        );
+        if (!allowed) {
+          return res.status(403).json({ message: "You are not assigned to this semester" });
+        }
+        if (parsedSem)  { conditions.push(`cr.semester = $${params.length + 1}`); params.push(parsedSem); }
+        if (parsedYear) { conditions.push(`cr.year = $${params.length + 1}`);     params.push(parsedYear); }
+      } else {
+        // Scope to ALL assigned semesters using (year, semester) pairs
+        const semPairs = teacherSems
+          .map((_, i) => `(cr.year = $${params.length + i * 2 + 1} AND cr.semester = $${params.length + i * 2 + 2})`)
+          .join(" OR ");
+        conditions.push(`(${semPairs})`);
+        teacherSems.forEach((s) => params.push(s.year, s.semester));
+      }
+
+      // Department filter: enforced for teachers
+      if (userDept) {
+        conditions.push(`cr.department = $${params.length + 1}`);
+        params.push(userDept);
+      }
+    } else {
+      // Admin / super_admin — optional filters
+      if (department) { conditions.push(`cr.department = $${params.length + 1}`); params.push(department); }
+      if (semester)   { conditions.push(`cr.semester = $${params.length + 1}`);   params.push(parseInt(semester, 10)); }
+      if (year)       { conditions.push(`cr.year = $${params.length + 1}`);       params.push(parseInt(year, 10)); }
     }
-
-    if (semester) { conditions.push(`cr.semester = $${params.length + 1}`);  params.push(semester); }
-    if (year)     { conditions.push(`cr.year = $${params.length + 1}`);      params.push(parseInt(year, 10)); }
-    if (status)   { conditions.push(`cr.status = $${params.length + 1}`);    params.push(status); }
+    // ── Common filters ────────────────────────────────────────────────────
+    if (status) { conditions.push(`cr.status = $${params.length + 1}`); params.push(status); }
     if (search) {
       const n = params.length;
       conditions.push(`(cr.student_name ILIKE $${n + 1} OR cr.roll_number ILIKE $${n + 2})`);
@@ -363,4 +410,77 @@ const getStats = async (req, res, next) => {
   }
 };
 
-module.exports = { getRequests, getRequestById, approveRequest, rejectRequest, requestChanges, getStats };
+module.exports = { getRequests, getRequestById, approveRequest, rejectRequest, requestChanges, getStats,
+  getSemesterAssignments, setSemesterAssignments };
+
+// ── Semester management ───────────────────────────────────────────────────
+
+/**
+ * GET /api/teacher/semesters
+ * Returns all (year, semester) pairs assigned to the requesting teacher,
+ * or for a specific teacher when admin passes ?teacherId=<id>.
+ */
+async function getSemesterAssignments(req, res, next) {
+  try {
+    const { role, id: userId } = req.user;
+    const targetId = role === "teacher" ? userId : (req.query.teacherId ? parseInt(req.query.teacherId, 10) : null);
+
+    if (!targetId) {
+      return res.status(400).json({ message: "teacherId is required" });
+    }
+
+    const { rows } = await db.query(
+      "SELECT id, year, semester, created_at FROM teacher_semesters WHERE teacher_id = $1 ORDER BY year, semester",
+      [targetId]
+    );
+
+    return res.json({ success: true, data: rows });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+/**
+ * PUT /api/teacher/semesters
+ * Admin only. Replaces all semester assignments for a teacher.
+ * Body: { teacherId: number, assignments: [{ year, semester }] }
+ */
+async function setSemesterAssignments(req, res, next) {
+  try {
+    const { teacherId, assignments } = req.body;
+
+    if (!teacherId || !Array.isArray(assignments)) {
+      return res.status(400).json({ message: "teacherId and assignments[] are required" });
+    }
+
+    // Validate each assignment
+    for (const a of assignments) {
+      if (!YEARS.includes(Number(a.year)) || !SEMESTERS.includes(Number(a.semester))) {
+        return res.status(400).json({ message: `Invalid assignment: year=${a.year} semester=${a.semester}` });
+      }
+    }
+
+    // Transactional replace
+    const client = await db.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("DELETE FROM teacher_semesters WHERE teacher_id = $1", [teacherId]);
+      for (const a of assignments) {
+        await client.query(
+          "INSERT INTO teacher_semesters (teacher_id, year, semester) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+          [teacherId, Number(a.year), Number(a.semester)]
+        );
+      }
+      await client.query("COMMIT");
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
+
+    return res.json({ success: true, message: "Semester assignments updated" });
+  } catch (err) {
+    return next(err);
+  }
+}

@@ -8,3 +8,5 @@ dist/
 Thumbs.db
 uploads/certificates/*
 !uploads/certificates/.gitkeep
+.vercel
+.env*.local
