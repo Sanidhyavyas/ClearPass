@@ -30,16 +30,16 @@ export function StatusBarChart({ pending = 0, approved = 0, rejected = 0 }) {
   ];
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h3 className="text-sm font-semibold text-slate-700 mb-4">Request Breakdown</h3>
+    <div className="bg-[#111120] rounded-xl border border-[#1e1e35] p-5">
+      <h3 className="text-sm font-semibold text-slate-300 mb-4">Request Breakdown</h3>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#1e1e35" />
+          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
           <Tooltip
-            contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", boxShadow: "0 1px 6px rgba(0,0,0,0.08)", fontSize: "12px" }}
-            cursor={{ fill: "rgba(0,0,0,0.03)" }}
+            contentStyle={{ borderRadius: "8px", border: "1px solid #252550", background: "#1a1a2e", color: "#e2e8f0", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", fontSize: "12px" }}
+            cursor={{ fill: "rgba(255,255,255,0.03)" }}
           />
           <Bar dataKey="value" radius={[4, 4, 0, 0]}>
             {data.map((entry, i) => (
@@ -62,8 +62,8 @@ export function UserPieChart({ students = 0, teachers = 0, admins = 0 }) {
   if (!data.length) return null;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h3 className="text-sm font-semibold text-slate-700 mb-4">User Distribution</h3>
+    <div className="bg-[#111120] rounded-xl border border-[#1e1e35] p-5">
+      <h3 className="text-sm font-semibold text-slate-300 mb-4">User Distribution</h3>
       <ResponsiveContainer width="100%" height={200}>
         <PieChart>
           <Pie
@@ -74,19 +74,19 @@ export function UserPieChart({ students = 0, teachers = 0, admins = 0 }) {
             cy="50%"
             outerRadius={72}
             label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-            labelLine={{ stroke: "#94a3b8", strokeWidth: 1 }}
+            labelLine={{ stroke: "#475569", strokeWidth: 1 }}
           >
             {data.map((entry, i) => (
               <Cell key={i} fill={entry.fill} />
             ))}
           </Pie>
           <Tooltip
-            contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", boxShadow: "0 1px 6px rgba(0,0,0,0.08)", fontSize: "12px" }}
+            contentStyle={{ borderRadius: "8px", border: "1px solid #252550", background: "#1a1a2e", color: "#e2e8f0", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", fontSize: "12px" }}
           />
           <Legend
             iconType="circle"
             iconSize={8}
-            formatter={(value) => <span style={{ fontSize: "11px", color: "#64748b" }}>{value}</span>}
+            formatter={(value) => <span style={{ fontSize: "11px", color: "#94a3b8" }}>{value}</span>}
           />
         </PieChart>
       </ResponsiveContainer>
@@ -109,18 +109,18 @@ export function ModuleBarChart({ moduleStats = [] }) {
   if (!data.length) return null;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h3 className="text-sm font-semibold text-slate-700 mb-4">Module-wise Clearance Status</h3>
+    <div className="bg-[#111120] rounded-xl border border-[#1e1e35] p-5">
+      <h3 className="text-sm font-semibold text-slate-300 mb-4">Module-wise Clearance Status</h3>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#1e1e35" />
+          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
           <Tooltip
-            contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", boxShadow: "0 1px 6px rgba(0,0,0,0.08)", fontSize: "12px" }}
-            cursor={{ fill: "rgba(0,0,0,0.03)" }}
+            contentStyle={{ borderRadius: "8px", border: "1px solid #252550", background: "#1a1a2e", color: "#e2e8f0", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", fontSize: "12px" }}
+            cursor={{ fill: "rgba(255,255,255,0.03)" }}
           />
-          <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: "11px", color: "#64748b" }}>{v}</span>} />
+          <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: "11px", color: "#94a3b8" }}>{v}</span>} />
           <Bar dataKey="Approved" stackId="a" fill={COLORS.approved} radius={[0, 0, 0, 0]} />
           <Bar dataKey="Pending"  stackId="a" fill={COLORS.pending}  radius={[0, 0, 0, 0]} />
           <Bar dataKey="Rejected" stackId="a" fill={COLORS.rejected} radius={[4, 4, 0, 0]} />
@@ -145,18 +145,18 @@ export function SemesterBreakdownChart({ semesterBreakdown = [] }) {
   if (!data.length) return null;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h3 className="text-sm font-semibold text-slate-700 mb-4">Clearance Stats per Semester</h3>
+    <div className="bg-[#111120] rounded-xl border border-[#1e1e35] p-5">
+      <h3 className="text-sm font-semibold text-slate-300 mb-4">Clearance Stats per Semester</h3>
       <ResponsiveContainer width="100%" height={240}>
         <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#1e1e35" />
+          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
           <Tooltip
-            contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", boxShadow: "0 1px 6px rgba(0,0,0,0.08)", fontSize: "12px" }}
-            cursor={{ fill: "rgba(0,0,0,0.03)" }}
+            contentStyle={{ borderRadius: "8px", border: "1px solid #252550", background: "#1a1a2e", color: "#e2e8f0", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", fontSize: "12px" }}
+            cursor={{ fill: "rgba(255,255,255,0.03)" }}
           />
-          <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: "11px", color: "#64748b" }}>{v}</span>} />
+          <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: "11px", color: "#94a3b8" }}>{v}</span>} />
           <Bar dataKey="Approved" fill={COLORS.approved} radius={[0, 0, 0, 0]} />
           <Bar dataKey="Pending"  fill={COLORS.pending}  radius={[0, 0, 0, 0]} />
           <Bar dataKey="Rejected" fill={COLORS.rejected} radius={[4, 4, 0, 0]} />
@@ -165,6 +165,8 @@ export function SemesterBreakdownChart({ semesterBreakdown = [] }) {
     </div>
   );
 }
+
+export function ModuleAvgChart({ moduleStats = [] }) {
   const data = moduleStats
     .filter((m) => m.avg_hours_to_approve > 0)
     .map((m) => ({
@@ -175,19 +177,19 @@ export function SemesterBreakdownChart({ semesterBreakdown = [] }) {
   if (!data.length) return null;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h3 className="text-sm font-semibold text-slate-700 mb-4">Avg Approval Time (hours)</h3>
+    <div className="bg-[#111120] rounded-xl border border-[#1e1e35] p-5">
+      <h3 className="text-sm font-semibold text-slate-300 mb-4">Avg Approval Time (hours)</h3>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#1e1e35" />
+          <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
           <Tooltip
             formatter={(v) => [`${v}h`, "Avg Hours"]}
-            contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", boxShadow: "0 1px 6px rgba(0,0,0,0.08)", fontSize: "12px" }}
-            cursor={{ fill: "rgba(0,0,0,0.03)" }}
+            contentStyle={{ borderRadius: "8px", border: "1px solid #252550", background: "#1a1a2e", color: "#e2e8f0", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", fontSize: "12px" }}
+            cursor={{ fill: "rgba(255,255,255,0.03)" }}
           />
-          <Bar dataKey="Avg Hours" fill="#6366f1" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="Avg Hours" fill="#7c3aed" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

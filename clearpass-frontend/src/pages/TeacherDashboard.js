@@ -22,12 +22,12 @@ const TGC_NAV = [
 // ── Stat Card ─────────────────────────────────────────────────────────────
 function StatCard({ label, sub, value, iconPath, colorClass, pulseDot }) {
   return (
-    <div className="rounded-xl shadow-sm bg-white p-6 border border-gray-100">
+    <div className="rounded-xl shadow-sm bg-[#111120] p-6 border border-[#1e1e35]">
       <div className="flex items-center justify-between mb-3">
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorClass}`}>
           {pulseDot ? (
             <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500/150 opacity-75" />
               <span className="relative inline-flex h-3 w-3 rounded-full bg-red-600" />
             </span>
           ) : (
@@ -37,8 +37,8 @@ function StatCard({ label, sub, value, iconPath, colorClass, pulseDot }) {
           )}
         </div>
       </div>
-      <p className="text-3xl font-bold text-gray-900">{value}</p>
-      <p className="text-sm font-medium text-gray-700 mt-1">{label}</p>
+      <p className="text-3xl font-bold text-white">{value}</p>
+      <p className="text-sm font-medium text-slate-300 mt-1">{label}</p>
       {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
     </div>
   );
@@ -60,23 +60,23 @@ function NotificationsBell({ count, notifications, open, onToggle, onMarkAllRead
       <button
         type="button"
         onClick={() => onToggle(!open)}
-        className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        className="relative p-2 text-slate-400 hover:text-slate-300 hover:bg-[#1a1a2e] rounded-lg transition-colors"
         aria-label="Notifications"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         {count > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500/150 text-white text-[10px] font-bold rounded-full px-1">
             {count > 9 ? "9+" : count}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-30 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-800">Notifications</h3>
+        <div className="absolute right-0 mt-2 w-80 bg-[#111120] border border-[#1e1e35] rounded-xl shadow-lg z-30 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#1e1e35]">
+            <h3 className="text-sm font-semibold text-slate-200">Notifications</h3>
             {count > 0 && (
               <button type="button" onClick={onMarkAllRead} className="text-xs text-blue-600 hover:underline">
                 Mark all read
@@ -89,7 +89,7 @@ function NotificationsBell({ count, notifications, open, onToggle, onMarkAllRead
           ) : (
             <div className="divide-y divide-gray-50 max-h-64 overflow-y-auto">
               {notifications.map((n) => (
-                <div key={n.id} className={`px-4 py-3 text-sm ${n.read ? "text-gray-400" : "text-gray-700 bg-blue-50/40"}`}>
+                <div key={n.id} className={`px-4 py-3 text-sm ${n.read ? "text-gray-400" : "text-slate-300 bg-blue-50/40"}`}>
                   <p className="font-medium">{n.message}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {n.time ? new Date(n.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
@@ -119,7 +119,7 @@ function FilterBar({ search, onSearchChange, semester, onSemesterChange, year, o
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search by name or roll number…"
-          className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          className="w-full pl-9 pr-4 py-2 text-sm border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
         />
       </div>
 
@@ -135,7 +135,7 @@ function FilterBar({ search, onSearchChange, semester, onSemesterChange, year, o
       <select
         value={status}
         onChange={(e) => onStatusChange(e.target.value)}
-        className="rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="rounded-lg border border-[#1e1e35] px-3 py-2 text-sm bg-[#111120] text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <option value="">All Statuses</option>
         <option value="pending">Pending</option>
@@ -148,7 +148,7 @@ function FilterBar({ search, onSearchChange, semester, onSemesterChange, year, o
         <button
           type="button"
           onClick={onClear}
-          className="px-3 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          className="px-3 py-2 text-sm text-slate-400 border border-[#1e1e35] rounded-lg hover:bg-[#1a1a2e] transition-colors"
         >
           Clear filters
         </button>
@@ -567,10 +567,10 @@ function TeacherDashboard() {
         {/* ── SECTION A: Page Header ──────────────────────────────── */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
+            <h1 className="text-2xl font-semibold text-white">
               {greeting()}, {currentUser?.name?.split(" ")[0] || "Teacher"}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">Here's what needs your attention today.</p>
+            <p className="text-sm text-slate-400 mt-1">Here's what needs your attention today.</p>
           </div>
 
           <div className="flex items-center gap-3 flex-shrink-0">
@@ -588,13 +588,13 @@ function TeacherDashboard() {
               <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold">
                 {(currentUser?.name || "T").charAt(0).toUpperCase()}
               </div>
-              <span className="text-sm font-medium text-gray-700 hidden sm:block">{currentUser?.name}</span>
+              <span className="text-sm font-medium text-slate-300 hidden sm:block">{currentUser?.name}</span>
             </div>
           </div>
         </div>
 
         {/* ADDED: Tab Navigation */}
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit flex-wrap">
+        <div className="flex gap-1 bg-[#1a1a2e] p-1 rounded-xl w-fit flex-wrap">
           {TGC_NAV.map(({ key, label }) => (
             <button
               key={key}
@@ -602,8 +602,8 @@ function TeacherDashboard() {
               onClick={() => setActiveTab(key)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === key
-                  ? "bg-white text-blue-700 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-[#111120] text-blue-700 shadow-sm"
+                  : "text-slate-400 hover:text-slate-300"
               }`}
             >
               {label}
@@ -679,20 +679,20 @@ function TeacherDashboard() {
 
         {/* ── TAB: My TGC Subjects ────────────────────────────────── */}
         {activeTab === "subjects" && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-[#111120] rounded-2xl border border-[#1e1e35] shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-50">
-              <h3 className="text-sm font-bold text-gray-800">My Assigned TGC Subjects — Semester 6 (2025-26)</h3>
+              <h3 className="text-sm font-bold text-slate-200">My Assigned TGC Subjects — Semester 6 (2025-26)</h3>
             </div>
             {subjectsLoading ? (
-              <div className="p-6 space-y-3">{[1,2,3].map(i => <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />)}</div>
+              <div className="p-6 space-y-3">{[1,2,3].map(i => <div key={i} className="h-12 bg-[#1a1a2e] rounded-xl animate-pulse" />)}</div>
             ) : mySubjects.length === 0 ? (
               <div className="p-10 text-center text-sm text-gray-400">No TGC subjects assigned yet.</div>
             ) : (
               <div className="divide-y divide-gray-50">
                 {mySubjects.map(sub => (
-                  <div key={sub.id} className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
+                  <div key={sub.id} className="flex items-center justify-between px-5 py-4 hover:bg-[#1a1a2e] transition-colors">
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{sub.name || sub.subject_name}</p>
+                      <p className="text-sm font-semibold text-white">{sub.name || sub.subject_name}</p>
                       <p className="text-xs text-gray-400 mt-0.5">{sub.code || sub.subject_code} · {sub.subject_type || sub.type}</p>
                     </div>
                     <div className="flex gap-2">
@@ -706,7 +706,7 @@ function TeacherDashboard() {
                       <button
                         type="button"
                         onClick={() => { setSelectedSubject(sub); setActiveTab("approvals"); }}
-                        className="px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                        className="px-3 py-1.5 text-xs font-medium text-green-600 bg-green-500/15 hover:bg-green-100 rounded-lg transition-colors"
                       >
                         Students
                       </button>
@@ -722,8 +722,8 @@ function TeacherDashboard() {
         {activeTab === "checklist" && (
           <div className="space-y-4">
             {/* Subject Selector */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Select Subject</label>
+            <div className="bg-[#111120] rounded-2xl border border-[#1e1e35] shadow-sm p-4">
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Select Subject</label>
               <div className="flex gap-2 flex-wrap">
                 {mySubjects.map(sub => (
                   <button
@@ -733,7 +733,7 @@ function TeacherDashboard() {
                     className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors ${
                       selectedSubject?.id === sub.id
                         ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        : "bg-[#1a1a2e] text-slate-400 hover:bg-gray-200"
                     }`}
                   >
                     {sub.name || sub.subject_name}
@@ -746,11 +746,11 @@ function TeacherDashboard() {
             {selectedSubject && (
               <>
                 {/* ── Quick Add Panel ─────────────────────────────── */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-[#111120] rounded-2xl border border-[#1e1e35] shadow-sm overflow-hidden">
                   <button
                     type="button"
                     onClick={() => setShowQuickAdd(q => !q)}
-                    className="w-full px-5 py-3 flex items-center justify-between text-sm font-bold text-gray-800 hover:bg-gray-50 transition-colors"
+                    className="w-full px-5 py-3 flex items-center justify-between text-sm font-bold text-slate-200 hover:bg-[#1a1a2e] transition-colors"
                   >
                     <span className="flex items-center gap-2">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -769,13 +769,13 @@ function TeacherDashboard() {
 
                       {/* Count selector for numbered items */}
                       <div className="flex items-center gap-3">
-                        <label className="text-xs font-medium text-gray-600 whitespace-nowrap">Count for numbered items:</label>
+                        <label className="text-xs font-medium text-slate-400 whitespace-nowrap">Count for numbered items:</label>
                         <input
                           type="number"
                           min={1} max={10}
                           value={quickCount}
                           onChange={e => setQuickCount(Math.min(10, Math.max(1, parseInt(e.target.value) || 1)))}
-                          className="w-16 px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                          className="w-16 px-2 py-1.5 text-sm border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
                         />
                       </div>
 
@@ -787,7 +787,7 @@ function TeacherDashboard() {
                             type="button"
                             disabled={bulkAdding}
                             onClick={() => handleBulkAdd(preset)}
-                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-50 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-blue-500/30 bg-blue-500/20 text-blue-300 hover:bg-blue-100 disabled:opacity-50 transition-colors"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -811,27 +811,27 @@ function TeacherDashboard() {
                 </div>
 
                 {/* Add Item Form */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                  <h3 className="text-sm font-bold text-gray-800 mb-4">
+                <div className="bg-[#111120] rounded-2xl border border-[#1e1e35] shadow-sm p-5">
+                  <h3 className="text-sm font-bold text-slate-200 mb-4">
                     Checklist for: <span className="text-blue-700">{selectedSubject.name || selectedSubject.subject_name}</span>
                   </h3>
                   <div className="flex gap-3 flex-wrap items-end">
                     <div className="flex-1 min-w-48">
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Item Name</label>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">Item Name</label>
                       <input
                         type="text"
                         value={newItemForm.item_name}
                         onChange={e => setNewItemForm(f => ({ ...f, item_name: e.target.value }))}
                         placeholder="e.g. TA1 submission"
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 text-sm border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Type</label>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">Type</label>
                       <select
                         value={newItemForm.item_type}
                         onChange={e => setNewItemForm(f => ({ ...f, item_type: e.target.value }))}
-                        className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="px-3 py-2 text-sm border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         {ITEM_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
@@ -844,7 +844,7 @@ function TeacherDashboard() {
                         onChange={e => setNewItemForm(f => ({ ...f, is_required: e.target.checked }))}
                         className="rounded"
                       />
-                      <label htmlFor="is_required" className="text-xs font-medium text-gray-600">Required</label>
+                      <label htmlFor="is_required" className="text-xs font-medium text-slate-400">Required</label>
                     </div>
                     <button
                       type="button"
@@ -858,9 +858,9 @@ function TeacherDashboard() {
                 </div>
 
                 {/* Existing Items */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-[#111120] rounded-2xl border border-[#1e1e35] shadow-sm overflow-hidden">
                   <div className="px-5 py-3 border-b border-gray-50 flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">
                       {checklistItems.length} item{checklistItems.length !== 1 ? "s" : ""}
                     </h4>
                     {checklistLoading && <span className="text-xs text-gray-400">Loading…</span>}
@@ -877,28 +877,28 @@ function TeacherDashboard() {
                                 type="text"
                                 value={editingItem.item_name}
                                 onChange={e => setEditingItem(ei => ({ ...ei, item_name: e.target.value }))}
-                                className="flex-1 min-w-32 px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none"
+                                className="flex-1 min-w-32 px-2 py-1 text-sm border border-[#252550] rounded-lg focus:outline-none"
                               />
                               <select
                                 value={editingItem.item_type}
                                 onChange={e => setEditingItem(ei => ({ ...ei, item_type: e.target.value }))}
-                                className="px-2 py-1 text-sm border border-gray-300 rounded-lg"
+                                className="px-2 py-1 text-sm border border-[#252550] rounded-lg"
                               >
                                 {ITEM_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                               </select>
                               <button type="button" onClick={handleSaveEditItem} className="px-2 py-1 text-xs bg-green-600 text-white rounded-lg font-medium">Save</button>
-                              <button type="button" onClick={() => setEditingItem(null)} className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded-lg font-medium">Cancel</button>
+                              <button type="button" onClick={() => setEditingItem(null)} className="px-2 py-1 text-xs bg-gray-200 text-slate-400 rounded-lg font-medium">Cancel</button>
                             </div>
                           ) : (
                             <>
                               <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <span className={`w-2 h-2 rounded-full shrink-0 ${item.is_required ? "bg-red-400" : "bg-gray-300"}`} title={item.is_required ? "Required" : "Optional"} />
-                                <span className="text-sm text-gray-800 truncate">{item.item_name}</span>
-                                <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full shrink-0">{item.item_type}</span>
+                                <span className="text-sm text-slate-200 truncate">{item.item_name}</span>
+                                <span className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded-full shrink-0">{item.item_type}</span>
                               </div>
                               <div className="flex gap-1 shrink-0">
-                                <button type="button" onClick={() => setEditingItem({ id: item.id, item_name: item.item_name, item_type: item.item_type, is_required: item.is_required })} className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg">Edit</button>
-                                <button type="button" onClick={() => handleDeleteChecklistItem(item.id)} className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded-lg">Delete</button>
+                                <button type="button" onClick={() => setEditingItem({ id: item.id, item_name: item.item_name, item_type: item.item_type, is_required: item.is_required })} className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-500/15 rounded-lg">Edit</button>
+                                <button type="button" onClick={() => handleDeleteChecklistItem(item.id)} className="px-2 py-1 text-xs text-red-500 hover:bg-red-500/15 rounded-lg">Delete</button>
                               </div>
                             </>
                           )}
@@ -916,8 +916,8 @@ function TeacherDashboard() {
         {activeTab === "approvals" && (
           <div className="space-y-4">
             {/* Subject Selector */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Select Subject</label>
+            <div className="bg-[#111120] rounded-2xl border border-[#1e1e35] shadow-sm p-4">
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Select Subject</label>
               <div className="flex gap-2 flex-wrap">
                 {mySubjects.map(sub => (
                   <button
@@ -927,7 +927,7 @@ function TeacherDashboard() {
                     className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors ${
                       selectedSubject?.id === sub.id
                         ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        : "bg-[#1a1a2e] text-slate-400 hover:bg-gray-200"
                     }`}
                   >
                     {sub.name || sub.subject_name}
@@ -943,8 +943,8 @@ function TeacherDashboard() {
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-4">
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div>
-                      <p className="text-base font-bold text-gray-900">{selectedSubject.name || selectedSubject.subject_name}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-base font-bold text-white">{selectedSubject.name || selectedSubject.subject_name}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">
                         {selectedSubject.subject_code}
                         {selectedSubject.type     ? ` · ${selectedSubject.type}`     : ""}
                         {selectedSubject.semester ? ` · Sem ${selectedSubject.semester}` : ""}
@@ -956,9 +956,9 @@ function TeacherDashboard() {
                         ["Type",     selectedSubject.type         || "—"],
                         ["Items",    selectedSubject.checklist_count ?? "—"],
                       ].map(([label, val]) => (
-                        <div key={label} className="bg-white/80 rounded-xl px-3 py-2 text-center min-w-[64px]">
+                        <div key={label} className="bg-[#1a1a2e] rounded-xl px-3 py-2 text-center min-w-[64px]">
                           <p className="text-[10px] text-blue-500 uppercase tracking-wide font-medium">{label}</p>
-                          <p className="text-sm font-bold text-gray-800 mt-0.5">{val}</p>
+                          <p className="text-sm font-bold text-slate-200 mt-0.5">{val}</p>
                         </div>
                       ))}
                     </div>
@@ -967,7 +967,7 @@ function TeacherDashboard() {
                   {studentsData?.items && studentsData.items.length > 0 && (
                     <div className="mt-3 flex gap-1.5 flex-wrap">
                       {studentsData.items.map(item => (
-                        <span key={item.id} className="inline-flex items-center gap-1 bg-white/80 text-gray-600 text-[10px] font-medium px-2 py-0.5 rounded-full border border-blue-100">
+                        <span key={item.id} className="inline-flex items-center gap-1 bg-[#1a1a2e] text-slate-400 text-[10px] font-medium px-2 py-0.5 rounded-full border border-blue-100">
                           <span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
                           {item.item_name}
                           {item.is_required && <span className="text-blue-400">*</span>}
@@ -978,9 +978,9 @@ function TeacherDashboard() {
                 </div>
 
                 {/* ── Students List ────────────────────────────────── */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-[#111120] rounded-2xl border border-[#1e1e35] shadow-sm overflow-hidden">
                   <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-gray-800">
+                    <h3 className="text-sm font-bold text-slate-200">
                       Students — {selectedSubject.name || selectedSubject.subject_name}
                     </h3>
                     <div className="flex items-center gap-3">
@@ -1006,22 +1006,22 @@ function TeacherDashboard() {
                         return (
                           <div key={stu.student_id}>
                             {/* ── Summary row ── */}
-                            <div className="px-5 py-4 flex items-center gap-3 hover:bg-gray-50 transition-colors">
+                            <div className="px-5 py-4 flex items-center gap-3 hover:bg-[#1a1a2e] transition-colors">
                               {/* Expand chevron */}
                               <button
                                 type="button"
                                 onClick={() => setExpandedStudents(prev => ({ ...prev, [stu.student_id]: !prev[stu.student_id] }))}
-                                className="shrink-0 w-7 h-7 rounded-lg bg-gray-100 hover:bg-blue-50 flex items-center justify-center transition-colors"
+                                className="shrink-0 w-7 h-7 rounded-lg bg-[#1a1a2e] hover:bg-blue-500/15 flex items-center justify-center transition-colors"
                                 title="Expand checklist"
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                                 </svg>
                               </button>
 
                               {/* Student info */}
                               <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-gray-900 text-sm leading-tight">{stu.student_name}</p>
+                                <p className="font-semibold text-white text-sm leading-tight">{stu.student_name}</p>
                                 <p className="text-xs text-gray-400 mt-0.5">
                                   {[stu.roll_number, stu.enrollment_no, stu.division].filter(Boolean).join(" · ")}
                                   {stu.email && <span className="ml-1">· {stu.email}</span>}
@@ -1030,13 +1030,13 @@ function TeacherDashboard() {
 
                               {/* Progress bar */}
                               <div className="shrink-0 w-28 hidden sm:block">
-                                <div className="flex items-center justify-between text-[10px] text-gray-500 mb-1">
+                                <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
                                   <span>{completed}/{total} done</span>
-                                  <span className="font-semibold text-gray-700">{pct}%</span>
+                                  <span className="font-semibold text-slate-300">{pct}%</span>
                                 </div>
                                 <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                                   <div
-                                    className={`h-full rounded-full transition-all ${pct === 100 ? "bg-green-500" : "bg-blue-500"}`}
+                                    className={`h-full rounded-full transition-all ${pct === 100 ? "bg-green-500/150" : "bg-blue-500"}`}
                                     style={{ width: `${pct}%` }}
                                   />
                                 </div>
@@ -1066,7 +1066,7 @@ function TeacherDashboard() {
 
                             {/* ── Expanded: full checklist ── */}
                             {isExpanded && (
-                              <div className="bg-gray-50 border-t border-gray-100 px-5 pt-3 pb-4">
+                              <div className="bg-[#0f0f1b] border-t border-[#1e1e35] px-5 pt-3 pb-4">
                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">
                                   Checklist — {stu.student_name}
                                 </p>
@@ -1075,27 +1075,27 @@ function TeacherDashboard() {
                                 ) : (
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                                     {(stu.checklist || []).map(ci => (
-                                      <div key={ci.checklist_item_id} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-100 shadow-sm">
+                                      <div key={ci.checklist_item_id} className="flex items-center gap-2 bg-[#111120] rounded-lg px-3 py-2 border border-[#1e1e35] shadow-sm">
                                         <button
                                           type="button"
                                           title={`Toggle: ${ci.item_name}`}
                                           onClick={() => handleToggleProgress(stu.student_id, ci.checklist_item_id, selectedSubject.id, ci.status)}
                                           className={`shrink-0 w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold transition-colors ${
-                                            ci.status === "completed" ? "bg-green-500 text-white"
-                                            : ci.status === "waived"  ? "bg-gray-300 text-gray-500"
+                                            ci.status === "completed" ? "bg-green-500/150 text-white"
+                                            : ci.status === "waived"  ? "bg-gray-300 text-slate-400"
                                             : "bg-gray-200 text-gray-400 hover:bg-blue-100"
                                           }`}
                                         >
                                           {ci.status === "completed" ? "✓" : ci.status === "waived" ? "−" : "○"}
                                         </button>
                                         <div className="flex-1 min-w-0">
-                                          <p className="text-xs font-medium text-gray-700 truncate">{ci.item_name}</p>
+                                          <p className="text-xs font-medium text-slate-300 truncate">{ci.item_name}</p>
                                           <p className="text-[10px] text-gray-400">{ci.item_type}{ci.is_required ? " · required" : ""}</p>
                                         </div>
                                         <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                                          ci.status === "completed" ? "bg-green-50 text-green-700"
-                                          : ci.status === "waived"  ? "bg-gray-100 text-gray-500"
-                                          : "bg-amber-50 text-amber-700"
+                                          ci.status === "completed" ? "bg-green-500/15 text-green-700"
+                                          : ci.status === "waived"  ? "bg-[#1a1a2e] text-slate-400"
+                                          : "bg-amber-500/20 text-amber-300"
                                         }`}>
                                           {ci.status || "pending"}
                                         </span>
@@ -1129,15 +1129,15 @@ function TeacherDashboard() {
           <div className="space-y-4">
 
             {/* Create Assignment form */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h2 className="text-base font-semibold text-gray-900 mb-4">Create New Assignment</h2>
+            <div className="bg-[#111120] rounded-2xl border border-[#1e1e35] shadow-sm p-6">
+              <h2 className="text-base font-semibold text-white mb-4">Create New Assignment</h2>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Subject</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Subject</label>
                   <select
                     value={newAssignmentForm.subject_id}
                     onChange={e => setNewAssignmentForm(f => ({ ...f, subject_id: e.target.value, checklist_item_id: "" }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 text-sm border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select subject…</option>
                     {mySubjects.map(s => (
@@ -1146,41 +1146,41 @@ function TeacherDashboard() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Title</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Title</label>
                   <input
                     type="text"
                     value={newAssignmentForm.title}
                     onChange={e => setNewAssignmentForm(f => ({ ...f, title: e.target.value }))}
                     placeholder="Assignment title"
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 text-sm border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Description (optional)</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Description (optional)</label>
                   <textarea
                     value={newAssignmentForm.description}
                     onChange={e => setNewAssignmentForm(f => ({ ...f, description: e.target.value }))}
                     rows={2}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    className="w-full px-3 py-2 text-sm border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                     placeholder="Instructions or details…"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Due Date (optional)</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Due Date (optional)</label>
                     <input
                       type="datetime-local"
                       value={newAssignmentForm.due_date}
                       onChange={e => setNewAssignmentForm(f => ({ ...f, due_date: e.target.value }))}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 text-sm border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Link Checklist Item (optional)</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Link Checklist Item (optional)</label>
                     <select
                       value={newAssignmentForm.checklist_item_id}
                       onChange={e => setNewAssignmentForm(f => ({ ...f, checklist_item_id: e.target.value }))}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 text-sm border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       disabled={!newAssignmentForm.subject_id}
                     >
                       <option value="">None</option>
@@ -1202,9 +1202,9 @@ function TeacherDashboard() {
             </div>
 
             {/* My Assignments list */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-base font-semibold text-gray-900">My Assignments</h2>
+            <div className="bg-[#111120] rounded-2xl border border-[#1e1e35] shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-[#1e1e35] flex items-center justify-between">
+                <h2 className="text-base font-semibold text-white">My Assignments</h2>
                 <button
                   type="button"
                   onClick={loadMyAssignments}
@@ -1216,7 +1216,7 @@ function TeacherDashboard() {
               {assignmentsLoading ? (
                 <div className="p-5 space-y-2">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />
+                    <div key={i} className="h-12 bg-[#1a1a2e] rounded-lg animate-pulse" />
                   ))}
                 </div>
               ) : myAssignments.length === 0 ? (
@@ -1226,7 +1226,7 @@ function TeacherDashboard() {
                   {myAssignments.map(asgn => (
                     <div
                       key={asgn.id}
-                      className={`px-5 py-3.5 cursor-pointer transition-colors ${selectedAssignment?.id === asgn.id ? "bg-blue-50" : "hover:bg-slate-50/50"}`}
+                      className={`px-5 py-3.5 cursor-pointer transition-colors ${selectedAssignment?.id === asgn.id ? "bg-blue-50" : "hover:bg-[#1a1a2e]/50"}`}
                       onClick={() => {
                         setSelectedAssignment(asgn);
                         loadSubmissions(asgn.id);
@@ -1234,7 +1234,7 @@ function TeacherDashboard() {
                     >
                       <div className="flex items-center justify-between">
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 truncate">{asgn.title}</p>
+                          <p className="text-sm font-semibold text-white truncate">{asgn.title}</p>
                           <p className="text-xs text-gray-400 mt-0.5">
                             {asgn.subject_name}
                             {asgn.due_date && ` · Due ${new Date(asgn.due_date).toLocaleDateString("en-IN")}`}
@@ -1262,22 +1262,22 @@ function TeacherDashboard() {
 
             {/* Submissions panel */}
             {selectedAssignment && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="bg-[#111120] rounded-2xl border border-[#1e1e35] shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-[#1e1e35] flex items-center justify-between">
                   <div>
-                    <h2 className="text-base font-semibold text-gray-900">{selectedAssignment.title}</h2>
+                    <h2 className="text-base font-semibold text-white">{selectedAssignment.title}</h2>
                     <p className="text-xs text-gray-400 mt-0.5">{selectedAssignment.subject_name} · Submissions</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => { setSelectedAssignment(null); setSubmissions([]); }}
-                    className="text-gray-400 hover:text-gray-700 text-xl leading-none"
+                    className="text-gray-400 hover:text-slate-300 text-xl leading-none"
                     aria-label="Close"
                   >×</button>
                 </div>
                 {submissionsLoading ? (
                   <div className="p-5 space-y-2">
-                    {[1, 2, 3].map(i => <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse" />)}
+                    {[1, 2, 3].map(i => <div key={i} className="h-14 bg-[#1a1a2e] rounded-lg animate-pulse" />)}
                   </div>
                 ) : submissions.length === 0 ? (
                   <div className="p-8 text-center text-sm text-gray-400">No students enrolled for this subject.</div>
@@ -1287,11 +1287,11 @@ function TeacherDashboard() {
                       <div key={stu.student_id} className="px-5 py-3.5 space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-gray-900">{stu.student_name}</p>
+                            <p className="text-sm font-semibold text-white">{stu.student_name}</p>
                             <p className="text-xs text-gray-400">{stu.email}{stu.roll_number ? ` · ${stu.roll_number}` : ""}</p>
                           </div>
                           <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 ml-2 ${
-                            !stu.submission_id ? "bg-gray-100 text-gray-500"
+                            !stu.submission_id ? "bg-[#1a1a2e] text-slate-400"
                             : stu.submission_status === "accepted" ? "bg-green-100 text-green-700"
                             : stu.submission_status === "rejected" ? "bg-red-100 text-red-700"
                             : "bg-amber-100 text-amber-700"
@@ -1313,7 +1313,7 @@ function TeacherDashboard() {
                                   [stu.submission_id]: { ...f[stu.submission_id], remarks: e.target.value },
                                 }))
                               }
-                              className="flex-1 min-w-[120px] px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="flex-1 min-w-[120px] px-3 py-1.5 text-xs border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
                             />
                             <button
                               type="button"
@@ -1334,7 +1334,7 @@ function TeacherDashboard() {
 
                         {/* Remarks when already reviewed */}
                         {stu.submission_id && stu.submission_status !== "submitted" && stu.remarks && (
-                          <p className="text-xs text-gray-500 italic">Remark: {stu.remarks}</p>
+                          <p className="text-xs text-slate-400 italic">Remark: {stu.remarks}</p>
                         )}
                       </div>
                     ))}
@@ -1370,13 +1370,13 @@ function TeacherDashboard() {
       {/* ADDED: Subject Approval Modal */}
       {approvingStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-base font-bold text-gray-900 mb-4">
+          <div className="bg-[#111120] rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-base font-bold text-white mb-4">
               Subject Approval{approvingStudent?.studentName ? ` — ${approvingStudent.studentName}` : " Decision"}
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Decision</label>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Decision</label>
                 <div className="flex gap-2">
                   {["approved","rejected","pending"].map(s => (
                     <button
@@ -1388,7 +1388,7 @@ function TeacherDashboard() {
                           ? s === "approved" ? "bg-green-600 text-white"
                             : s === "rejected" ? "bg-red-600 text-white"
                             : "bg-amber-500 text-white"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          : "bg-[#1a1a2e] text-slate-400 hover:bg-gray-200"
                       }`}
                     >
                       {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -1397,21 +1397,21 @@ function TeacherDashboard() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Remarks (optional)</label>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Remarks (optional)</label>
                 <textarea
                   value={approvalForm.remarks}
                   onChange={e => setApprovalForm(f => ({ ...f, remarks: e.target.value }))}
                   rows={2}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full px-3 py-2 text-sm border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   placeholder="Add remarks…"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Mini Project Status</label>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Mini Project Status</label>
                 <select
                   value={approvalForm.mini_project_status}
                   onChange={e => setApprovalForm(f => ({ ...f, mini_project_status: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">N/A</option>
                   <option value="submitted">Submitted</option>
@@ -1424,7 +1424,7 @@ function TeacherDashboard() {
               <button
                 type="button"
                 onClick={() => setApprovingStudent(null)}
-                className="flex-1 py-2.5 text-sm font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors"
+                className="flex-1 py-2.5 text-sm font-semibold bg-[#1a1a2e] hover:bg-gray-200 text-slate-300 rounded-xl transition-colors"
               >
                 Cancel
               </button>

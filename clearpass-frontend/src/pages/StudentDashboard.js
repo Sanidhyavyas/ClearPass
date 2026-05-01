@@ -17,12 +17,12 @@ const STATUS_STYLE = {
   approved:     { pill: "bg-green-100 text-green-800", border: "" },
   pending:      { pill: "bg-amber-100 text-amber-800", border: "" },
   rejected:     { pill: "bg-red-100 text-red-800",     border: "border-l-4 border-red-500" },
-  not_required: { pill: "bg-gray-100 text-gray-600",   border: "" },
+  not_required: { pill: "bg-[#1a1a2e] text-slate-400",   border: "" },
 };
 
 const TIMELINE_DOT = {
-  approved:          "bg-green-500",
-  rejected:          "bg-red-500",
+  approved:          "bg-green-500/150",
+  rejected:          "bg-red-500/150",
   changes_requested: "bg-amber-500",
   submitted:         "bg-blue-500",
   resubmitted:       "bg-blue-400",
@@ -36,7 +36,7 @@ const navItems = [
 ];
 
 function StatusPill({ status }) {
-  const s = STATUS_STYLE[status] || { pill: "bg-gray-100 text-gray-600", border: "" };
+  const s = STATUS_STYLE[status] || { pill: "bg-[#1a1a2e] text-slate-400", border: "" };
   return (
     <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${s.pill}`}>
       {status?.replace("_", " ") || "—"}
@@ -48,18 +48,18 @@ function ModuleCard({ mod }) {
   const meta  = MODULE_META[mod.module_name] || {};
   const style = STATUS_STYLE[mod.status]     || STATUS_STYLE.pending;
   return (
-    <div className={`bg-white rounded-xl border border-gray-100 p-5 shadow-sm ${style.border}`}>
+    <div className={`bg-[#111120] rounded-xl border border-[#1e1e35] p-5 shadow-sm ${style.border}`}>
       <div className="flex items-center justify-between mb-3">
-        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="w-9 h-9 rounded-lg bg-[#1a1a2e] flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d={meta.icon} />
           </svg>
         </div>
         <StatusPill status={mod.status} />
       </div>
-      <p className="text-sm font-semibold text-gray-800">{meta.label || mod.module_name}</p>
+      <p className="text-sm font-semibold text-slate-200">{meta.label || mod.module_name}</p>
       {mod.remarks && (
-        <p className="text-xs text-gray-500 italic mt-1.5">{mod.remarks}</p>
+        <p className="text-xs text-slate-400 italic mt-1.5">{mod.remarks}</p>
       )}
       {mod.status === "rejected" && (
         <p className="text-xs text-red-600 font-medium mt-2">Action required</p>
@@ -317,7 +317,7 @@ export default function StudentDashboard() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-100 h-32 animate-pulse" />
+            <div key={i} className="bg-[#111120] rounded-xl border border-[#1e1e35] h-32 animate-pulse" />
           ))}
         </div>
       ) : (
@@ -363,18 +363,18 @@ export default function StudentDashboard() {
 
               {tgcLoading ? (
                 <div className="space-y-3">
-                  {[1,2,3].map(i => <div key={i} className="bg-white rounded-xl h-16 animate-pulse" />)}
+                  {[1,2,3].map(i => <div key={i} className="bg-[#111120] rounded-xl h-16 animate-pulse" />)}
                 </div>
               ) : !tgcData?.certificate ? (
                 /* No request yet */
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
+                <div className="bg-[#111120] rounded-2xl border border-[#1e1e35] shadow-sm p-10 text-center">
                   <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
-                  <h3 className="text-base font-semibold text-gray-800">Term Grant Certificate</h3>
-                  <p className="text-sm text-gray-500 mt-1 mb-5">Submit your request to start the TGC clearance process{profile?.semester ? ` for Semester ${profile.semester}` : ""}.</p>
+                  <h3 className="text-base font-semibold text-slate-200">Term Grant Certificate</h3>
+                  <p className="text-sm text-slate-400 mt-1 mb-5">Submit your request to start the TGC clearance process{profile?.semester ? ` for Semester ${profile.semester}` : ""}.</p>
                   <button
                     type="button"
                     onClick={handleRequestTGC}
@@ -393,8 +393,8 @@ export default function StudentDashboard() {
                     const appr  = tgcData.approved_count || 0;
                     const pct   = total > 0 ? Math.round((appr / total) * 100) : 0;
                     const statusCfg = {
-                      approved: { bg: "bg-green-50 border-green-200", bar: "bg-green-500",  pill: "bg-green-100 text-green-800",  label: "All Approved ✓" },
-                      rejected: { bg: "bg-red-50 border-red-200",     bar: "bg-red-500",    pill: "bg-red-100 text-red-700",      label: "Rejected" },
+                      approved: { bg: "bg-green-500/15 border-green-200", bar: "bg-green-500/150",  pill: "bg-green-100 text-green-800",  label: "All Approved ✓" },
+                      rejected: { bg: "bg-red-500/15 border-red-200",     bar: "bg-red-500/150",    pill: "bg-red-100 text-red-700",      label: "Rejected" },
                       pending:  { bg: "bg-amber-50 border-amber-200", bar: "bg-blue-500",   pill: "bg-amber-100 text-amber-800",  label: "In Progress" },
                     };
                     const cfg = statusCfg[cert.overall_status] || statusCfg.pending;
@@ -402,12 +402,12 @@ export default function StudentDashboard() {
                       <div className={`rounded-2xl border p-5 ${cfg.bg}`}>
                         <div className="flex items-center justify-between mb-3">
                           <div>
-                            <p className="text-sm font-bold text-gray-800 uppercase tracking-wide">Term Grant Certificate</p>
-                            <p className="text-xs text-gray-500 mt-0.5">Semester {cert.semester} · {cert.academic_year}</p>
+                            <p className="text-sm font-bold text-slate-200 uppercase tracking-wide">Term Grant Certificate</p>
+                            <p className="text-xs text-slate-400 mt-0.5">Semester {cert.semester} · {cert.academic_year}</p>
                           </div>
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${cfg.pill}`}>{cfg.label}</span>
                         </div>
-                        <div className="flex items-center justify-between text-xs text-gray-600 mb-1.5">
+                        <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
                           <span>{appr}/{total} subjects approved</span>
                           <span className="font-bold">{pct}%</span>
                         </div>
@@ -433,9 +433,9 @@ export default function StudentDashboard() {
                       });
                     });
                     return (
-                      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                      <div className="bg-[#111120] rounded-2xl border border-[#1e1e35] shadow-sm overflow-hidden">
                         <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-                          <h3 className="text-sm font-bold text-gray-800">Subject-wise Clearance Status</h3>
+                          <h3 className="text-sm font-bold text-slate-200">Subject-wise Clearance Status</h3>
                           <span className="text-xs text-gray-400">{subjects.length} subject{subjects.length !== 1 ? "s" : ""}</span>
                         </div>
                         {subjects.length === 0 ? (
@@ -443,19 +443,19 @@ export default function StudentDashboard() {
                         ) : (
                           <div className="overflow-x-auto">
                             <table className="w-full text-xs">
-                              <thead className="bg-gray-50">
+                              <thead className="bg-[#0f0f1b]">
                                 <tr>
-                                  <th className="px-4 py-3 text-left text-gray-700 font-semibold sticky left-0 bg-gray-50 z-10 min-w-[150px] border-r border-gray-100">
+                                  <th className="px-4 py-3 text-left text-slate-300 font-semibold sticky left-0 bg-[#0f0f1b] z-10 min-w-[150px] border-r border-[#1e1e35]">
                                     Subject
                                   </th>
                                   {colHeaders.map(col => (
-                                    <th key={col.name} className="px-3 py-3 text-center text-gray-500 font-medium min-w-[90px]">
+                                    <th key={col.name} className="px-3 py-3 text-center text-slate-400 font-medium min-w-[90px]">
                                       <span className="block truncate max-w-[90px]" title={col.name}>{col.name}</span>
                                       <span className="text-gray-300 text-[9px]">[{col.type}]</span>
                                     </th>
                                   ))}
-                                  <th className="px-3 py-3 text-center text-gray-600 font-semibold min-w-[90px]">Teacher</th>
-                                  <th className="px-3 py-3 text-center text-gray-600 font-semibold min-w-[80px]">Status</th>
+                                  <th className="px-3 py-3 text-center text-slate-400 font-semibold min-w-[90px]">Teacher</th>
+                                  <th className="px-3 py-3 text-center text-slate-400 font-semibold min-w-[80px]">Status</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-50">
@@ -463,9 +463,9 @@ export default function StudentDashboard() {
                                   const itemByName = {};
                                   (sub.checklist || []).forEach(item => { itemByName[item.item_name] = item; });
                                   return (
-                                    <tr key={sub.subject_id} className="hover:bg-gray-50 transition-colors">
-                                      <td className="px-4 py-3 sticky left-0 bg-white z-10 border-r border-gray-100">
-                                        <p className="font-semibold text-gray-800 leading-tight">{sub.subject_name}</p>
+                                    <tr key={sub.subject_id} className="hover:bg-[#1a1a2e] transition-colors">
+                                      <td className="px-4 py-3 sticky left-0 bg-[#111120] z-10 border-r border-[#1e1e35]">
+                                        <p className="font-semibold text-slate-200 leading-tight">{sub.subject_name}</p>
                                         <p className="text-gray-400 text-[10px] mt-0.5">
                                           {sub.subject_code}{sub.type ? ` · ${sub.type}` : ""}
                                         </p>
@@ -482,7 +482,7 @@ export default function StudentDashboard() {
                                           </td>
                                         );
                                       })}
-                                      <td className="px-3 py-3 text-center text-gray-500 font-medium text-[11px]">
+                                      <td className="px-3 py-3 text-center text-slate-400 font-medium text-[11px]">
                                         {sub.teacher_name
                                           ? <span title={sub.teacher_name}>{sub.teacher_name.split(" ").slice(0, 2).join(" ")}</span>
                                           : "—"}
@@ -512,8 +512,8 @@ export default function StudentDashboard() {
                     {[
                       { label: "Fee Cleared", val: tgcData.certificate?.fee_cleared, yes: "Cleared ✅", no: "Pending ❌" },
                     ].map(({ label, val, yes, no }) => (
-                      <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">{label}</p>
+                      <div key={label} className="bg-[#111120] rounded-xl border border-[#1e1e35] shadow-sm p-4">
+                        <p className="text-xs text-slate-400 font-medium uppercase tracking-wide mb-1">{label}</p>
                         <p className={`text-sm font-bold ${val ? "text-green-700" : "text-red-600"}`}>
                           {val ? yes : no}
                         </p>
@@ -528,7 +528,7 @@ export default function StudentDashboard() {
                     const isFeeCleared = !!cert?.fee_cleared;
                     const canDownload  = isApproved && isFeeCleared;
 
-                    let bgCls  = "bg-gray-50 border-gray-200";
+                    let bgCls  = "bg-[#0f0f1b] border-[#1e1e35]";
                     let msg    = "";
                     if (!isApproved) {
                       msg   = `Waiting for ${(tgcData.total_count || 0) - (tgcData.approved_count || 0)} more subject(s) to be approved.`;
@@ -536,15 +536,15 @@ export default function StudentDashboard() {
                       bgCls = "bg-amber-50 border-amber-200";
                       msg   = "Clearance approved ✓ — waiting for fees verification to enable download.";
                     } else {
-                      bgCls = "bg-green-50 border-green-200";
+                      bgCls = "bg-green-500/15 border-green-200";
                       msg   = "All cleared! Your certificate is ready to download.";
                     }
 
                     return (
                       <div className={`rounded-xl border p-5 flex items-center justify-between gap-4 ${bgCls}`}>
                         <div>
-                          <p className="text-sm font-semibold text-gray-800">Term Grant Certificate PDF</p>
-                          <p className={`text-xs mt-0.5 ${canDownload ? "text-green-700 font-medium" : isApproved ? "text-amber-700" : "text-gray-500"}`}>
+                          <p className="text-sm font-semibold text-slate-200">Term Grant Certificate PDF</p>
+                          <p className={`text-xs mt-0.5 ${canDownload ? "text-green-700 font-medium" : isApproved ? "text-amber-700" : "text-slate-400"}`}>
                             {msg}
                           </p>
                         </div>
@@ -568,14 +568,14 @@ export default function StudentDashboard() {
           {activeKey === "documents" && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Documents</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Upload your ID card, fee receipt, and other supporting files (JPEG, PNG, PDF — max 5 MB each).</p>
+                <h2 className="text-xl font-bold text-white">Documents</h2>
+                <p className="text-sm text-slate-400 mt-0.5">Upload your ID card, fee receipt, and other supporting files (JPEG, PNG, PDF — max 5 MB each).</p>
               </div>
 
               {/* Upload area */}
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-4">
+              <div className="bg-[#111120] rounded-xl border border-[#1e1e35] shadow-sm p-6 space-y-4">
                 <div
-                  className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors"
+                  className="border-2 border-dashed border-[#1e1e35] rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors"
                   onClick={() => fileInputRef.current?.click()}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
@@ -587,7 +587,7 @@ export default function StudentDashboard() {
                   <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-10 w-10 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-slate-400">
                     {selectedFiles.length > 0
                       ? `${selectedFiles.length} file${selectedFiles.length > 1 ? "s" : ""} selected`
                       : "Drag & drop or click to select files"}
@@ -606,7 +606,7 @@ export default function StudentDashboard() {
                 {selectedFiles.length > 0 && (
                   <ul className="text-sm space-y-1">
                     {selectedFiles.map((f, i) => (
-                      <li key={i} className="flex items-center justify-between text-gray-700">
+                      <li key={i} className="flex items-center justify-between text-slate-300">
                         <span className="truncate">{f.name}</span>
                         <span className="text-xs text-gray-400 ml-2 shrink-0">{formatBytes(f.size)}</span>
                       </li>
@@ -626,24 +626,24 @@ export default function StudentDashboard() {
 
               {/* Uploaded files list */}
               {documents.length === 0 ? (
-                <div className="bg-white rounded-xl border border-gray-100 py-12 text-center shadow-sm">
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35] py-12 text-center shadow-sm">
                   <p className="text-sm text-gray-400">No documents uploaded yet.</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35] shadow-sm overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="border-b border-gray-100 bg-gray-50">
+                    <thead className="border-b border-[#1e1e35] bg-[#0f0f1b]">
                       <tr>
                         {["File Name", "Size", "Uploaded", ""].map((h) => (
-                          <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                          <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wide">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {documents.map((doc) => (
-                        <tr key={doc.id} className="hover:bg-gray-50/60">
-                          <td className="px-4 py-3 font-medium text-gray-800 truncate max-w-[180px]">{doc.file_name}</td>
-                          <td className="px-4 py-3 text-gray-500">{formatBytes(doc.file_size)}</td>
+                        <tr key={doc.id} className="hover:bg-[#1a1a2e]/60">
+                          <td className="px-4 py-3 font-medium text-slate-200 truncate max-w-[180px]">{doc.file_name}</td>
+                          <td className="px-4 py-3 text-slate-400">{formatBytes(doc.file_size)}</td>
                           <td className="px-4 py-3 text-gray-400">{formatDate(doc.uploaded_at)}</td>
                           <td className="px-4 py-3 text-right">
                             <button
@@ -667,37 +667,37 @@ export default function StudentDashboard() {
           {activeKey === "history" && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Application History</h2>
-                <p className="text-sm text-gray-500 mt-0.5">All actions taken on your clearance request.</p>
+                <h2 className="text-xl font-bold text-white">Application History</h2>
+                <p className="text-sm text-slate-400 mt-0.5">All actions taken on your clearance request.</p>
               </div>
 
               {history.length === 0 ? (
-                <div className="bg-white rounded-xl border border-gray-100 py-16 text-center shadow-sm">
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35] py-16 text-center shadow-sm">
                   <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <p className="text-sm text-gray-500 font-medium">No history yet</p>
+                  <p className="text-sm text-slate-400 font-medium">No history yet</p>
                   <p className="text-xs text-gray-400 mt-1">Actions on your request will appear here.</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35] shadow-sm p-6">
                   <div className="relative pl-6">
                     <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-gray-200" />
                     <div className="space-y-5">
                       {history.map((log, i) => (
                         <div key={log.id || i} className="relative">
                           <div className={`absolute -left-4 mt-1.5 w-3 h-3 rounded-full border-2 border-white ${TIMELINE_DOT[log.action] || "bg-gray-400"}`} />
-                          <p className="text-sm font-semibold text-gray-800 capitalize">
+                          <p className="text-sm font-semibold text-slate-200 capitalize">
                             {log.action?.replace(/_/g, " ")}
                           </p>
                           {log.performer_name && (
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-slate-400">
                               by {log.performer_name}
                               {log.performer_role ? ` (${log.performer_role})` : ""}
                             </p>
                           )}
                           {log.remarks && (
-                            <p className="text-sm text-gray-500 italic mt-0.5">"{log.remarks}"</p>
+                            <p className="text-sm text-slate-400 italic mt-0.5">"{log.remarks}"</p>
                           )}
                           <p className="text-xs text-gray-400 mt-0.5">{formatDate(log.timestamp)}</p>
                         </div>
@@ -713,23 +713,23 @@ export default function StudentDashboard() {
               {assignmentsLoading ? (
                 <div className="space-y-3">
                   {[1, 2].map(i => (
-                    <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5">
-                      <div className="h-4 bg-gray-100 rounded animate-pulse w-1/3 mb-3" />
+                    <div key={i} className="bg-[#111120] rounded-2xl border border-[#1e1e35] p-5">
+                      <div className="h-4 bg-[#1a1a2e] rounded animate-pulse w-1/3 mb-3" />
                       <div className="space-y-2">
-                        {[1, 2].map(j => <div key={j} className="h-16 bg-gray-50 rounded-xl animate-pulse" />)}
+                        {[1, 2].map(j => <div key={j} className="h-16 bg-[#0f0f1b] rounded-xl animate-pulse" />)}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : assignmentSubjects.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center text-sm text-gray-400">
+                <div className="bg-[#111120] rounded-2xl border border-[#1e1e35] p-12 text-center text-sm text-gray-400">
                   No assignments yet. They will appear here once your teacher posts them.
                 </div>
               ) : (
                 assignmentSubjects.map(subject => (
-                  <div key={subject.subject_id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-5 py-3.5 bg-slate-50 border-b border-gray-100">
-                      <p className="text-sm font-semibold text-gray-900">{subject.subject_name}</p>
+                  <div key={subject.subject_id} className="bg-[#111120] rounded-2xl border border-[#1e1e35] shadow-sm overflow-hidden">
+                    <div className="px-5 py-3.5 bg-[#0f0f1b] border-b border-[#1e1e35]">
+                      <p className="text-sm font-semibold text-white">{subject.subject_name}</p>
                       <p className="text-xs text-gray-400">{subject.subject_code}</p>
                     </div>
                     <div className="divide-y divide-gray-50">
@@ -739,7 +739,7 @@ export default function StudentDashboard() {
                           status === "accepted" ? "bg-green-100 text-green-700" :
                           status === "rejected" ? "bg-red-100 text-red-700"    :
                           status === "submitted" ? "bg-amber-100 text-amber-700" :
-                          "bg-gray-100 text-gray-500";
+                          "bg-[#1a1a2e] text-slate-400";
                         const statusLabel =
                           status === "accepted" ? "Accepted ✓" :
                           status === "rejected" ? "Rejected ✗" :
@@ -750,13 +750,13 @@ export default function StudentDashboard() {
                           <div key={asgn.id} className="px-5 py-4 space-y-2">
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
-                                <p className="text-sm font-semibold text-gray-900">{asgn.title}</p>
+                                <p className="text-sm font-semibold text-white">{asgn.title}</p>
                                 <p className="text-xs text-gray-400 mt-0.5">
                                   by {asgn.teacher_name}
                                   {asgn.due_date && ` · Due ${new Date(asgn.due_date).toLocaleDateString("en-IN")}`}
                                 </p>
                                 {asgn.description && (
-                                  <p className="text-xs text-gray-500 mt-1">{asgn.description}</p>
+                                  <p className="text-xs text-slate-400 mt-1">{asgn.description}</p>
                                 )}
                               </div>
                               <span className={`shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded-full ${statusColor}`}>
@@ -766,7 +766,7 @@ export default function StudentDashboard() {
 
                             {/* Rejection remark */}
                             {status === "rejected" && asgn.remarks && (
-                              <div className="bg-red-50 border border-red-100 rounded-lg px-3 py-2 text-xs text-red-700">
+                              <div className="bg-red-500/15 border border-red-100 rounded-lg px-3 py-2 text-xs text-red-700">
                                 <span className="font-semibold">Remark:</span> {asgn.remarks}
                               </div>
                             )}
@@ -787,7 +787,7 @@ export default function StudentDashboard() {
                                     htmlFor={`assign-file-${asgn.id}`}
                                     className={`cursor-pointer px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
                                       uploadingAssignId === asgn.id
-                                        ? "bg-gray-200 text-gray-500 cursor-wait"
+                                        ? "bg-gray-200 text-slate-400 cursor-wait"
                                         : "bg-blue-600 hover:bg-blue-700 text-white"
                                     }`}
                                   >
@@ -802,7 +802,7 @@ export default function StudentDashboard() {
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteSubmission(asgn.submission_id)}
-                                  className="px-3 py-1.5 bg-gray-100 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-colors"
+                                  className="px-3 py-1.5 bg-[#1a1a2e] hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-colors"
                                 >
                                   Delete
                                 </button>

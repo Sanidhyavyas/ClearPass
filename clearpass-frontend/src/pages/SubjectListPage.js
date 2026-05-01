@@ -19,7 +19,7 @@ const navItems = [
   { key: "back",       label: "Super Admin Home",     caption: "Back to main dashboard",           href: "/super-admin"           },
 ];
 
-const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150";
+const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-[#252550] bg-[#111120] text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150";
 
 function EmptyState({ filtered }) {
   return (
@@ -106,7 +106,7 @@ function SubjectListPage() {
         {/* Page header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Manage Subjects</h1>
+            <h1 className="text-2xl font-bold text-white">Manage Subjects</h1>
             <p className="text-sm text-slate-500 mt-0.5">{pagination.total} subject{pagination.total !== 1 ? "s" : ""} in total</p>
           </div>
           <button
@@ -135,7 +135,7 @@ function SubjectListPage() {
           <select
             value={dept}
             onChange={(e) => setDept(e.target.value)}
-            className="px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-52"
+            className="px-3 py-2.5 text-sm border border-[#252550] rounded-lg bg-[#111120] focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-52"
             aria-label="Filter by department"
           >
             <option value="">All departments</option>
@@ -144,7 +144,7 @@ function SubjectListPage() {
           <select
             value={activeFilter}
             onChange={(e) => setActive(e.target.value)}
-            className="px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-36"
+            className="px-3 py-2.5 text-sm border border-[#252550] rounded-lg bg-[#111120] focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-36"
             aria-label="Filter by status"
           >
             <option value="">All statuses</option>
@@ -154,11 +154,11 @@ function SubjectListPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="bg-[#111120] rounded-xl border border-[#1e1e35] overflow-hidden">
           {loading ? (
             <table className="w-full text-sm" aria-label="Loading subjects">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/60">
+                <tr className="border-b border-[#1e1e35] bg-[#0f0f1b]/60">
                   {["Code", "Name", "Credits", "Department", "Mapped to", "Status", ""].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">{h}</th>
                   ))}
@@ -174,7 +174,7 @@ function SubjectListPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm" aria-label="Subjects table">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/60">
+                  <tr className="border-b border-[#1e1e35] bg-[#0f0f1b]/60">
                     {["Code", "Name", "Credits", "Department", "Mapped to", "Status", "Actions"].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                     ))}
@@ -182,7 +182,7 @@ function SubjectListPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {subjects.map((s) => (
-                    <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={s.id} className="hover:bg-[#1a1a2e]/60 transition-colors">
                       {/* Code */}
                       <td className="px-4 py-3">
                         <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded">{s.subject_code}</span>
@@ -194,7 +194,7 @@ function SubjectListPage() {
                       </td>
                       {/* Credits */}
                       <td className="px-4 py-3 text-center">
-                        <span className="text-sm font-semibold text-slate-700 bg-slate-100 rounded-full px-2.5 py-0.5">{s.credits}</span>
+                        <span className="text-sm font-semibold text-slate-300 bg-slate-100 rounded-full px-2.5 py-0.5">{s.credits}</span>
                       </td>
                       {/* Department */}
                       <td className="px-4 py-3 text-slate-500 text-sm">{s.department || <span className="text-slate-300">—</span>}</td>
@@ -262,7 +262,7 @@ function SubjectListPage() {
                 type="button"
                 onClick={() => loadSubjects(pagination.page - 1)}
                 disabled={pagination.page <= 1}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition-colors text-xs font-medium"
+                className="px-3 py-1.5 rounded-lg border border-[#252550] text-slate-300 disabled:opacity-40 hover:bg-[#1a1a2e] transition-colors text-xs font-medium"
               >
                 Previous
               </button>
@@ -270,7 +270,7 @@ function SubjectListPage() {
                 type="button"
                 onClick={() => loadSubjects(pagination.page + 1)}
                 disabled={pagination.page >= pagination.totalPages}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition-colors text-xs font-medium"
+                className="px-3 py-1.5 rounded-lg border border-[#252550] text-slate-300 disabled:opacity-40 hover:bg-[#1a1a2e] transition-colors text-xs font-medium"
               >
                 Next
               </button>

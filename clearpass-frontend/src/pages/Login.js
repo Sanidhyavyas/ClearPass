@@ -118,7 +118,7 @@ function Login() {
       </div>
 
       {/* Right form panel */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-slate-50 dark:bg-slate-900 relative">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-[#09090f] relative">
         {/* Theme toggle (top-right corner) */}
         <button
           type="button"

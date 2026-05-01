@@ -17,22 +17,22 @@ const navItems = [
   { key: "clearance",    label: "Clearance Approvals",caption: "Review and approve student clearances" },
 ];
 
-const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-150";
+const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-[#252550] bg-[#111120] text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-150";
 
 const ROLES = ["student", "teacher", "admin", "super_admin"];
 
 function StatCard({ label, value, color = "default", icon }) {
   const colorMap = {
-    default: { text: "text-slate-900",   icon: "bg-slate-100 text-slate-600"   },
-    blue:    { text: "text-blue-700",    icon: "bg-blue-50 text-blue-600"      },
-    amber:   { text: "text-amber-700",   icon: "bg-amber-50 text-amber-600"    },
-    green:   { text: "text-green-700",   icon: "bg-green-50 text-green-600"    },
-    red:     { text: "text-red-700",     icon: "bg-red-50 text-red-600"        },
-    purple:  { text: "text-purple-700",  icon: "bg-purple-50 text-purple-600"  },
+    default: { text: "text-white",   icon: "bg-[#1a1a2e] text-slate-400"   },
+    blue:    { text: "text-blue-300",    icon: "bg-blue-500/20 text-blue-400"     },
+    amber:   { text: "text-amber-300",   icon: "bg-amber-500/20 text-amber-400"   },
+    green:   { text: "text-green-300",   icon: "bg-green-500/20 text-green-400"   },
+    red:     { text: "text-red-300",     icon: "bg-red-500/20 text-red-400"       },
+    purple:  { text: "text-violet-300",  icon: "bg-violet-500/20 text-violet-400" },
   };
   const s = colorMap[color] || colorMap.default;
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
+    <div className="bg-[#111120] rounded-xl border border-[#1e1e35] p-5">
       {icon && (
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${s.icon} mb-3`}>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -41,7 +41,7 @@ function StatCard({ label, value, color = "default", icon }) {
         </div>
       )}
       <p className={`text-3xl font-bold ${s.text}`}>{value}</p>
-      <p className="text-sm text-slate-500 mt-1">{label}</p>
+      <p className="text-sm text-slate-400 mt-1">{label}</p>
     </div>
   );
 }
@@ -49,10 +49,10 @@ function StatCard({ label, value, color = "default", icon }) {
 function EmptyState({ title, desc }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-slate-200 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-slate-700 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
-      <p className="text-sm font-semibold text-slate-600">{title}</p>
+      <p className="text-sm font-semibold text-slate-400">{title}</p>
       <p className="text-xs text-slate-400 mt-1">{desc}</p>
     </div>
   );
@@ -64,7 +64,7 @@ const EMPTY_FORM = { name: "", email: "", password: "", role: "student", departm
 function Field({ label, id, children, error }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
+      <label htmlFor={id} className="block text-xs font-semibold text-slate-300 mb-1">{label}</label>
       {children}
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
@@ -354,8 +354,8 @@ function SuperAdminDashboard() {
   const stats = overview || {};
   const THead = ({ cols }) => (
     <thead>
-      <tr className="border-b border-slate-100 bg-slate-50/60">
-        {cols.map((c) => <th key={c} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">{c}</th>)}
+      <tr className="border-b border-[#1e1e35] bg-[#1a1a2e]/40">
+        {cols.map((c) => <th key={c} className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wide">{c}</th>)}
       </tr>
     </thead>
   );
@@ -371,8 +371,8 @@ function SuperAdminDashboard() {
   const setEditF = (key, val) => setEditingUser((eu) => ({ ...eu, form: { ...eu.form, [key]: val } }));
 
   const formCard = (title, onSubmit, f, setF, btnLabel, cancelFn) => (
-    <div className="bg-white rounded-xl border border-slate-200 p-6 max-w-lg w-full">
-      <h2 className="text-lg font-bold text-slate-900 mb-5">{title}</h2>
+    <div className="bg-[#111120] rounded-xl border border-[#1e1e35] p-6 max-w-lg w-full">
+      <h2 className="text-lg font-bold text-white mb-5">{title}</h2>
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <Field label="Full Name" id={`${title}-name`} error={formErrors.name}>
           <input id={`${title}-name`} type="text" value={f.name} onChange={(e) => setF("name", e.target.value)} placeholder="Jane Doe" className={inputClass} />
@@ -402,14 +402,14 @@ function SuperAdminDashboard() {
             {submitting ? "Saving…" : btnLabel}
           </button>
           {cancelFn && (
-            <button type="button" onClick={cancelFn} className="flex-1 py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition-all duration-150">Cancel</button>
+            <button type="button" onClick={cancelFn} className="flex-1 py-2.5 border border-[#252550] hover:bg-[#1a1a2e] text-slate-300 text-sm font-semibold rounded-lg transition-all duration-150">Cancel</button>
           )}
         </div>
       </form>
     </div>
   );
 
-  const roleColor = { student: "bg-blue-50 text-blue-700 ring-blue-200", teacher: "bg-amber-50 text-amber-700 ring-amber-200", admin: "bg-green-50 text-green-700 ring-green-200", super_admin: "bg-purple-50 text-purple-700 ring-purple-200" };
+  const roleColor = { student: "bg-blue-500/20 text-blue-300 ring-blue-500/30", teacher: "bg-amber-500/20 text-amber-300 ring-amber-500/30", admin: "bg-green-500/20 text-green-300 ring-green-500/30", super_admin: "bg-violet-500/20 text-violet-300 ring-violet-500/30" };
 
   return (
     <>
@@ -443,13 +443,13 @@ function SuperAdminDashboard() {
                   <StatCard label="Admins"        value={stats.totalAdmins   || users.filter((u) => u.role === "admin").length}   color="green"  icon="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   <StatCard label="Super Admins"  value={stats.totalSuperAdmins || users.filter((u) => u.role === "super_admin").length} color="purple" icon="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                 </div>
-                <div className="bg-white border border-slate-200 rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Platform Summary</h3>
+                <div className="bg-[#111120] border border-[#1e1e35] rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-slate-300 mb-3">Platform Summary</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                     {[["Total Requests", stats.totalRequests ?? "—"], ["Pending Requests", stats.pendingRequests ?? "—"], ["Approved", stats.approvedRequests ?? "—"]].map(([k, v]) => (
                       <div key={k} className="border border-slate-100 rounded-lg p-3">
                         <p className="text-xs text-slate-400">{k}</p>
-                        <p className="text-lg font-bold text-slate-800 mt-0.5">{v}</p>
+                        <p className="text-lg font-bold text-slate-200 mt-0.5">{v}</p>
                       </div>
                     ))}
                   </div>
@@ -460,7 +460,7 @@ function SuperAdminDashboard() {
             {/* CREATE USER */}
             {activeKey === "create" && (
               <div className="space-y-4">
-                <h2 className="text-xl font-bold text-slate-900">Create New User</h2>
+                <h2 className="text-xl font-bold text-white">Create New User</h2>
                 {formCard(
                   "Create User",
                   handleCreate,
@@ -480,44 +480,44 @@ function SuperAdminDashboard() {
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search users…" className={`${inputClass} pl-9`} aria-label="Search users" />
                   </div>
-                  <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 sm:w-44" aria-label="Filter by role">
+                  <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="px-3 py-2.5 text-sm border border-[#252550] rounded-lg bg-[#111120] focus:outline-none focus:ring-2 focus:ring-purple-500 sm:w-44" aria-label="Filter by role">
                     <option value="all">All roles</option>
                     {ROLES.map((r) => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1).replace("_", " ")}</option>)}
                   </select>
                 </div>
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35] overflow-hidden">
                   {filteredUsers.length === 0 ? (
                     <EmptyState title="No users found" desc="Try adjusting your search or role filter." />
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm" aria-label="Users management table">
                         <THead cols={["Name", "Email", "Role", "Department", ""]} />
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#1e1e35]">
                           {filteredUsers.map((u) => (
-                            <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
+                            <tr key={u.id} className="hover:bg-[#1a1a2e]/60 transition-colors">
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2.5">
-                                  <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-600 shrink-0">
+                                  <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-400 shrink-0">
                                     {(u.name || "U").charAt(0).toUpperCase()}
                                   </div>
-                                  <span className="font-medium text-slate-800">{u.name}</span>
+                                  <span className="font-medium text-slate-200">{u.name}</span>
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-slate-500">{u.email}</td>
+                              <td className="px-4 py-3 text-slate-400">{u.email}</td>
                               <td className="px-4 py-3">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ring-1 capitalize ${roleColor[u.role] || "bg-slate-50 text-slate-600 ring-slate-200"}`}>{u.role?.replace("_", " ")}</span>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ring-1 capitalize ${roleColor[u.role] || "bg-[#0f0f1b] text-slate-400 ring-slate-200"}`}>{u.role?.replace("_", " ")}</span>
                               </td>
-                              <td className="px-4 py-3 text-slate-500">{u.department || "—"}</td>
+                              <td className="px-4 py-3 text-slate-400">{u.department || "—"}</td>
                               <td className="px-4 py-3">
                                 <div className="flex gap-2 justify-end">
-                                  <button type="button" onClick={() => startEdit(u)} className="px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-md transition-all duration-150">Edit</button>
-                                  <button type="button" onClick={() => setDeleteTarget(u)} className="px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 rounded-md transition-all duration-150">Delete</button>
+                                  <button type="button" onClick={() => startEdit(u)} className="px-3 py-1 text-xs font-semibold text-blue-400 hover:bg-blue-500/15 border border-blue-500/30 rounded-md transition-all duration-150">Edit</button>
+                                  <button type="button" onClick={() => setDeleteTarget(u)} className="px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-500/15 border border-red-500/30 rounded-md transition-all duration-150">Delete</button>
                                   {u.role === "student" && (
                                     <button
                                       type="button"
                                       onClick={() => handleApproveStudentClearance(u.id, u.name)}
                                       disabled={approvingUserId === u.id}
-                                      className="px-3 py-1 text-xs font-semibold text-green-600 hover:bg-green-50 border border-green-200 rounded-md transition-all duration-150 disabled:opacity-50"
+                                      className="px-3 py-1 text-xs font-semibold text-green-600 hover:bg-green-500/15 border border-green-500/30 rounded-md transition-all duration-150 disabled:opacity-50"
                                     >
                                       {approvingUserId === u.id ? "…" : "Approve Clearance"}
                                     </button>
@@ -537,11 +537,11 @@ function SuperAdminDashboard() {
             {/* EDIT USER */}
             {activeKey === "manage" && editingUser && (
               <div className="space-y-4">
-                <button type="button" onClick={() => { setEditingUser(null); setFormErrors({}); }} className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 transition-colors">
+                <button type="button" onClick={() => { setEditingUser(null); setFormErrors({}); }} className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-slate-200 transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                   Back to Users
                 </button>
-                <h2 className="text-xl font-bold text-slate-900">Edit User</h2>
+                <h2 className="text-xl font-bold text-white">Edit User</h2>
                 {formCard(
                   "Edit User",
                   (e) => { e.preventDefault(); handleSaveEdit(); },
@@ -571,11 +571,11 @@ function SuperAdminDashboard() {
                       const currentSelection = moduleSelections[mod.module_name] ?? "";
                       const currentStaff = staff.find((s) => String(s.id) === String(currentSelection));
                       return (
-                        <div key={mod.module_name} className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+                        <div key={mod.module_name} className="bg-[#111120] rounded-xl border border-[#1e1e35] p-5 space-y-3">
                           <div>
-                            <p className="text-sm font-semibold text-slate-800">{label}</p>
+                            <p className="text-sm font-semibold text-slate-200">{label}</p>
                             {currentStaff ? (
-                              <p className="text-xs text-slate-500 mt-0.5">Currently: {currentStaff.name} ({currentStaff.email})</p>
+                              <p className="text-xs text-slate-400 mt-0.5">Currently: {currentStaff.name} ({currentStaff.email})</p>
                             ) : (
                               <p className="text-xs text-slate-400 mt-0.5">No one assigned</p>
                             )}
@@ -584,7 +584,7 @@ function SuperAdminDashboard() {
                             <select
                               value={currentSelection}
                               onChange={(e) => setModuleSelections((m) => ({ ...m, [mod.module_name]: e.target.value }))}
-                              className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              className="flex-1 px-3 py-2 text-sm border border-[#252550] rounded-lg bg-[#111120] focus:outline-none focus:ring-2 focus:ring-purple-500"
                               aria-label={`Assign staff to ${label}`}
                             >
                               <option value="">— Unassigned —</option>
@@ -618,11 +618,11 @@ function SuperAdminDashboard() {
                 </div>
 
                 {/* Create Subject Form */}
-                <div className="bg-white rounded-xl border border-slate-200 p-5">
-                  <h3 className="text-sm font-bold text-slate-800 mb-4">Add New TGC Subject</h3>
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35] p-5">
+                  <h3 className="text-sm font-bold text-slate-200 mb-4">Add New TGC Subject</h3>
                   <form onSubmit={handleCreateTGCSubject} className="flex flex-wrap gap-3 items-end">
                     <div className="flex-1 min-w-40">
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Subject Name *</label>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Subject Name *</label>
                       <input
                         type="text"
                         value={tgcSubjForm.name}
@@ -632,7 +632,7 @@ function SuperAdminDashboard() {
                       />
                     </div>
                     <div className="w-36">
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Code *</label>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Code *</label>
                       <input
                         type="text"
                         value={tgcSubjForm.code}
@@ -642,7 +642,7 @@ function SuperAdminDashboard() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Type</label>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Type</label>
                       <select
                         value={tgcSubjForm.subject_type}
                         onChange={e => setTgcSubjForm(f => ({ ...f, subject_type: e.target.value }))}
@@ -652,7 +652,7 @@ function SuperAdminDashboard() {
                       </select>
                     </div>
                     <div className="w-28">
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Semester</label>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Semester</label>
                       <input
                         type="number"
                         min={1} max={8}
@@ -662,7 +662,7 @@ function SuperAdminDashboard() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Acad. Year</label>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Acad. Year</label>
                       <input
                         type="text"
                         value={tgcSubjForm.academic_year}
@@ -681,15 +681,15 @@ function SuperAdminDashboard() {
                 </div>
 
                 {/* Subjects List */}
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35] overflow-hidden">
                   {tgcSubjLoading ? (
-                    <div className="p-6 space-y-3">{[1,2,3].map(i=><div key={i} className="h-12 bg-slate-100 rounded-lg animate-pulse"/>)}</div>
+                    <div className="p-6 space-y-3">{[1,2,3].map(i=><div key={i} className="h-12 bg-[#1a1a2e] rounded-lg animate-pulse"/>)}</div>
                   ) : tgcSubjects.length === 0 ? (
                     <EmptyState title="No TGC subjects" desc="Add subjects using the form above." />
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
-                        <thead className="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        <thead className="bg-[#0f0f1b] text-xs font-semibold text-slate-400 uppercase tracking-wide">
                           <tr>
                             <th className="px-5 py-3 text-left">Subject</th>
                             <th className="px-4 py-3 text-left">Code</th>
@@ -701,11 +701,11 @@ function SuperAdminDashboard() {
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                           {tgcSubjects.map(sub => (
-                            <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="px-5 py-3 font-medium text-slate-900">{sub.name || sub.subject_name}</td>
-                              <td className="px-4 py-3 text-slate-500 font-mono text-xs">{sub.code || sub.subject_code}</td>
+                            <tr key={sub.id} className="hover:bg-[#1a1a2e]/50 transition-colors">
+                              <td className="px-5 py-3 font-medium text-white">{sub.name || sub.subject_name}</td>
+                              <td className="px-4 py-3 text-slate-400 font-mono text-xs">{sub.code || sub.subject_code}</td>
                               <td className="px-4 py-3">
-                                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                                <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded-full text-xs font-medium">
                                   {sub.subject_type || sub.type || "—"}
                                 </span>
                               </td>
@@ -716,7 +716,7 @@ function SuperAdminDashboard() {
                                   <div className="flex flex-wrap gap-1">
                                     <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">Assigned</span>
                                     {(sub.teachers || []).map(t => (
-                                      <span key={t.teacher_id || t.id} className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">{t.teacher_name || t.name}</span>
+                                      <span key={t.teacher_id || t.id} className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">{t.teacher_name || t.name}</span>
                                     ))}
                                   </div>
                                 )}
@@ -726,7 +726,7 @@ function SuperAdminDashboard() {
                                   <select
                                     value={assignTeacherMap[sub.id] || ""}
                                     onChange={e => setAssignTeacherMap(m => ({ ...m, [sub.id]: e.target.value }))}
-                                    className="px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[140px]"
+                                    className="px-2 py-1.5 text-xs border border-[#252550] rounded-lg bg-[#111120] focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[140px]"
                                   >
                                     <option value="">Select teacher…</option>
                                     {staff.filter(s => s.role === "teacher").map(t => (
@@ -747,7 +747,7 @@ function SuperAdminDashboard() {
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteTGCSubject(sub.id)}
-                                  className="px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                  className="px-2 py-1.5 text-xs text-red-500 hover:bg-red-500/15 rounded-lg transition-colors"
                                 >
                                   Delete
                                 </button>
@@ -771,7 +771,7 @@ function SuperAdminDashboard() {
                 </div>
 
                 {tgcLoading ? (
-                  <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-16 bg-slate-100 rounded-xl animate-pulse" />)}</div>
+                  <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-16 bg-[#1a1a2e] rounded-xl animate-pulse" />)}</div>
                 ) : (
                   <>
                     {/* Analytics Cards */}
@@ -788,9 +788,9 @@ function SuperAdminDashboard() {
 
                     {/* Subject-wise breakdown */}
                     {tgcAnalytics?.subject_wise?.length > 0 && (
-                      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                        <div className="px-5 py-4 border-b border-slate-100">
-                          <h3 className="text-sm font-bold text-slate-800">Subject-wise Approval Rates</h3>
+                      <div className="bg-[#111120] rounded-xl border border-[#1e1e35] overflow-hidden">
+                        <div className="px-5 py-4 border-b border-[#1e1e35]">
+                          <h3 className="text-sm font-bold text-slate-200">Subject-wise Approval Rates</h3>
                         </div>
                         <div className="divide-y divide-slate-50">
                           {tgcAnalytics.subject_wise.map(s => {
@@ -798,15 +798,15 @@ function SuperAdminDashboard() {
                             return (
                               <div key={s.subject_id} className="px-5 py-3 flex items-center gap-4">
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-slate-800 truncate">{s.subject_name}</p>
+                                  <p className="text-sm font-medium text-slate-200 truncate">{s.subject_name}</p>
                                   <div className="flex items-center gap-2 mt-1">
-                                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[200px]">
-                                      <div className="h-full bg-green-500 rounded-full" style={{ width: `${pct}%` }} />
+                                    <div className="flex-1 h-1.5 bg-[#1a1a2e] rounded-full overflow-hidden max-w-[200px]">
+                                      <div className="h-full bg-green-500/150 rounded-full" style={{ width: `${pct}%` }} />
                                     </div>
-                                    <span className="text-xs text-slate-500 shrink-0">{s.approved}/{s.total} ({pct}%)</span>
+                                    <span className="text-xs text-slate-400 shrink-0">{s.approved}/{s.total} ({pct}%)</span>
                                   </div>
                                 </div>
-                                <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full shrink-0">
+                                <span className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded-full shrink-0">
                                   {s.subject_type || "—"}
                                 </span>
                               </div>
@@ -817,9 +817,9 @@ function SuperAdminDashboard() {
                     )}
 
                     {/* Students Table */}
-                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                      <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3">
-                        <h3 className="text-sm font-bold text-slate-800">All Students — TGC Status</h3>
+                    <div className="bg-[#111120] rounded-xl border border-[#1e1e35] overflow-hidden">
+                      <div className="px-5 py-4 border-b border-[#1e1e35] flex items-center justify-between gap-3">
+                        <h3 className="text-sm font-bold text-slate-200">All Students — TGC Status</h3>
                         <div className="relative">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -829,7 +829,7 @@ function SuperAdminDashboard() {
                             value={tgcSearchQuery}
                             onChange={e => setTgcSearchQuery(e.target.value)}
                             placeholder="Search…"
-                            className="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 w-48"
+                            className="pl-8 pr-3 py-1.5 text-xs border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 w-48"
                           />
                         </div>
                       </div>
@@ -838,7 +838,7 @@ function SuperAdminDashboard() {
                       ) : (
                         <div className="overflow-x-auto">
                           <table className="w-full text-sm">
-                            <thead className="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                            <thead className="bg-[#0f0f1b] text-xs font-semibold text-slate-400 uppercase tracking-wide">
                               <tr>
                                 <th className="px-5 py-3 text-left">Student</th>
                                 <th className="px-4 py-3 text-center">Semester</th>
@@ -854,13 +854,13 @@ function SuperAdminDashboard() {
                                   const status = s.overall_status || s.certificate_status || "pending";
                                   const statusCls = status === "approved" ? "bg-green-100 text-green-700" : status === "rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700";
                                   return (
-                                    <tr key={s.student_id || s.id} className="hover:bg-slate-50/50">
+                                    <tr key={s.student_id || s.id} className="hover:bg-[#1a1a2e]/50">
                                       <td className="px-5 py-3">
-                                        <p className="font-semibold text-slate-900">{s.name || s.student_name}</p>
+                                        <p className="font-semibold text-white">{s.name || s.student_name}</p>
                                         <p className="text-xs text-slate-400">{s.email} · {s.roll_number}</p>
                                       </td>
-                                      <td className="px-4 py-3 text-center text-slate-600">{s.semester || 6}</td>
-                                      <td className="px-4 py-3 text-center font-semibold text-slate-700">
+                                      <td className="px-4 py-3 text-center text-slate-400">{s.semester || 6}</td>
+                                      <td className="px-4 py-3 text-center font-semibold text-slate-300">
                                         {s.approved_count ?? "—"}/{s.total_subjects ?? "—"}
                                       </td>
                                       <td className="px-4 py-3 text-center">
@@ -891,9 +891,9 @@ function SuperAdminDashboard() {
                   <p className="text-violet-100 text-sm mt-1">Review and approve or reject student clearance requests.</p>
                 </div>
                 {clearanceLoading ? (
-                  <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-24 bg-slate-100 rounded-xl animate-pulse" />)}</div>
+                  <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-24 bg-[#1a1a2e] rounded-xl animate-pulse" />)}</div>
                 ) : clearanceRequests.length === 0 ? (
-                  <div className="bg-white rounded-xl border border-slate-200">
+                  <div className="bg-[#111120] rounded-xl border border-[#1e1e35]">
                     <EmptyState title="No clearance requests" desc="No students have submitted clearance requests yet." />
                   </div>
                 ) : (
@@ -901,14 +901,14 @@ function SuperAdminDashboard() {
                     {clearanceRequests.map((r) => {
                       const overall = r.status || "pending";
                       const overallPill = overall === "approved" ? "bg-green-100 text-green-700" : overall === "rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700";
-                      const feePill = r.fee_status === "approved" ? "bg-green-100 text-green-700" : r.fee_status === "rejected" ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600";
-                      const stagePill = r.current_stage === "completed" ? "bg-green-100 text-green-700" : r.current_stage === "admin" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600";
+                      const feePill = r.fee_status === "approved" ? "bg-green-100 text-green-700" : r.fee_status === "rejected" ? "bg-red-100 text-red-700" : "bg-[#1a1a2e] text-slate-400";
+                      const stagePill = r.current_stage === "completed" ? "bg-green-100 text-green-700" : r.current_stage === "admin" ? "bg-blue-100 text-blue-700" : "bg-[#1a1a2e] text-slate-400";
                       return (
-                        <div key={r.id} className="bg-white rounded-xl border border-slate-200 p-5">
+                        <div key={r.id} className="bg-[#111120] rounded-xl border border-[#1e1e35] p-5">
                           <div className="flex items-start justify-between gap-4 flex-wrap">
                             <div>
-                              <p className="font-semibold text-slate-900">{r.student_name}</p>
-                              <p className="text-xs text-slate-500">{r.student_email} · {r.department || "—"} · {r.roll_number || "—"}</p>
+                              <p className="font-semibold text-white">{r.student_name}</p>
+                              <p className="text-xs text-slate-400">{r.student_email} · {r.department || "—"} · {r.roll_number || "—"}</p>
                               <p className="text-xs text-slate-400 mt-0.5">Sem {r.semester || "—"} · Year {r.year || "—"} · Teacher: {r.assigned_teacher_name || "—"}</p>
                               <p className="text-xs text-slate-400">Submitted: {r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : "—"}</p>
                             </div>
@@ -919,7 +919,7 @@ function SuperAdminDashboard() {
                             </div>
                           </div>
                           {r.rejection_reason && (
-                            <p className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg mt-2">Reason: {r.rejection_reason}</p>
+                            <p className="text-xs text-red-600 bg-red-500/15 px-3 py-1.5 rounded-lg mt-2">Reason: {r.rejection_reason}</p>
                           )}
                           {overall !== "approved" && (
                             <div className="mt-4 space-y-2">
@@ -928,7 +928,7 @@ function SuperAdminDashboard() {
                                 onChange={(e) => setClearanceRemarksMap((m) => ({ ...m, [r.id]: e.target.value }))}
                                 placeholder="Remarks / rejection reason (required for rejection)…"
                                 rows={2}
-                                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                className="w-full px-3 py-2 text-sm border border-[#1e1e35] rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
                               />
                               <div className="flex gap-2">
                                 <button
@@ -958,7 +958,7 @@ function SuperAdminDashboard() {
                                 type="button"
                                 onClick={() => handleClearanceApproval(r.id, "rejected")}
                                 disabled={processingClearance === r.id}
-                                className="ml-auto px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-colors"
+                                className="ml-auto px-3 py-1 bg-red-500/15 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-colors"
                               >
                                 Revoke
                               </button>

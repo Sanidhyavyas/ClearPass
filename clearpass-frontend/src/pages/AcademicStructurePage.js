@@ -40,7 +40,7 @@ function SortableCard({ subject, onRemove, removing }) {
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-white rounded-lg border border-slate-200 flex items-center gap-2 px-3 py-2.5 select-none group"
+      className="bg-[#111120] rounded-lg border border-[#1e1e35] flex items-center gap-2 px-3 py-2.5 select-none group"
     >
       {/* Drag handle */}
       <button
@@ -94,9 +94,9 @@ function SemesterPanel({ year, semester, subjects, onDragEnd, onRemove, onAdd, r
   const ids = subjects.map((s) => s.mapping_id);
 
   return (
-    <div className="flex flex-col bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+    <div className="flex flex-col bg-[#0f0f1b] rounded-xl border border-[#1e1e35] overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#111120] border-b border-[#1e1e35]">
         <h3 className="text-sm font-semibold text-slate-800">
           Semester {semester}
           {dirty && <span className="ml-2 text-xs text-amber-500 font-normal">(unsaved changes)</span>}
@@ -123,7 +123,7 @@ function SemesterPanel({ year, semester, subjects, onDragEnd, onRemove, onAdd, r
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-white">
+      <div className="flex items-center justify-between px-4 py-3 border-t border-[#1e1e35] bg-[#111120]">
         <span className="text-xs text-slate-500">
           Total: <strong className="text-slate-800">{totalCredits}</strong> credits
         </span>
@@ -262,14 +262,14 @@ function AcademicStructurePage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Academic Structure</h1>
+            <h1 className="text-2xl font-bold text-white">Academic Structure</h1>
             <p className="text-sm text-slate-500 mt-0.5">Drag cards to reorder subjects within a semester. Click save to persist.</p>
           </div>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={loadStructure}
-              className="flex items-center gap-1.5 px-3 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2.5 border border-[#252550] rounded-lg text-sm font-medium text-slate-300 hover:bg-[#1a1a2e] transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
               Refresh
@@ -311,7 +311,7 @@ function AcademicStructurePage() {
                   key={y}
                   type="button"
                   onClick={() => setYear(y)}
-                  className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 ${activeYear === y ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                  className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 ${activeYear === y ? "bg-[#111120] text-white shadow-sm" : "text-slate-500 hover:text-slate-300"}`}
                 >
                   Year {y}
                 </button>

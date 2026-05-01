@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Navbar from "./Navbar";
 import NotificationBell from "./NotificationBell";
+import { useTheme } from "../context/ThemeContext";
 
 function DashboardLayout({
   title,
@@ -14,6 +15,14 @@ function DashboardLayout({
   children,
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { dark, toggle } = useTheme();
+
+  const initials = (user?.name || "U")
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -25,11 +34,11 @@ function DashboardLayout({
   }, [sidebarOpen]);
 
   return (
-    <div className="min-h-screen flex bg-slate-100 dark:bg-slate-900">
+    <div className="min-h-screen flex bg-[#09090f]">
       {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/60 lg:hidden"
           role="presentation"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
@@ -48,23 +57,78 @@ function DashboardLayout({
         isOpen={sidebarOpen}
       />
 
-      {/* Main content */}
+      {/* Main content column */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-0">
+
         {/* Mobile top bar */}
-        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-20">
+        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-[#0f0f1b] border-b border-[#1e1e35] sticky top-0 z-20">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
             aria-label="Open navigation"
-            className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            className="p-2 rounded-lg text-slate-400 hover:bg-[#1a1a2e] transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">ClearPass</span>
-          <div className="ml-auto">
+          <span className="text-sm font-semibold text-white">ClearPass</span>
+          <div className="ml-auto flex items-center gap-2">
             <NotificationBell />
+          </div>
+        </header>
+
+        {/* Desktop top header — persistent */}
+        <header className="hidden lg:flex items-center justify-between px-6 py-3 bg-[#0f0f1b] border-b border-[#1e1e35] sticky top-0 z-20">
+          {/* Search bar */}
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#1a1a2e] border border-[#252550] w-72">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search anything..."
+              className="bg-transparent text-sm text-slate-300 placeholder-slate-500 outline-none flex-1 min-w-0"
+              aria-label="Search"
+            />
+            <kbd className="shrink-0 text-xs text-slate-500 bg-[#1e1e3e] border border-[#2d2d55] px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
+          </div>
+
+          {/* Right controls */}
+          <div className="flex items-center gap-3">
+            {/* Theme toggle */}
+            <button
+              type="button"
+              onClick={toggle}
+              aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+              className="p-2 rounded-lg text-slate-400 hover:bg-[#1a1a2e] hover:text-white transition-colors"
+            >
+              {dark ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m8.66-9h-1M4.34 12h-1m15.07-6.07-.71.71M6.34 17.66l-.71.71M17.66 17.66l-.71-.71M6.34 6.34l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </button>
+
+            {/* Notification bell */}
+            <NotificationBell />
+
+            {/* User role badge */}
+            {user && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#1a1a2e] border border-[#252550] cursor-default">
+                <div className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                  {initials}
+                </div>
+                <span className="text-sm text-slate-300 capitalize">{user.role?.replace("_", " ") || "User"}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            )}
           </div>
         </header>
 

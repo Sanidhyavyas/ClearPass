@@ -19,7 +19,7 @@ const ROLE_BANNER = {
   super_admin: "from-violet-600 to-purple-600",
 };
 
-const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150 disabled:bg-slate-50 disabled:text-slate-400";
+const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-[#252550] bg-[#111120] text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150 disabled:bg-[#0f0f1b] disabled:text-slate-400";
 
 function ProfilePage() {
   const [user, setUser] = useState(null);
@@ -79,31 +79,31 @@ function ProfilePage() {
         <div className="space-y-6 max-w-xl">
           {/* Avatar card */}
           <div className={`bg-gradient-to-r ${banner} rounded-2xl p-6 flex items-center gap-4 text-white`}>
-            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold border-2 border-white/30 shrink-0" aria-label="User initials">
+            <div className="w-16 h-16 rounded-full bg-[#111120]/20 flex items-center justify-center text-2xl font-bold border-2 border-white/30 shrink-0" aria-label="User initials">
               {initials}
             </div>
             <div>
               <h1 className="text-xl font-bold">{user?.name}</h1>
               <p className="text-sm opacity-80">{user?.email}</p>
-              <span className="mt-1 inline-block text-xs font-medium bg-white/20 px-2 py-0.5 rounded-full">{roleLabel}</span>
+              <span className="mt-1 inline-block text-xs font-medium bg-[#111120]/20 px-2 py-0.5 rounded-full">{roleLabel}</span>
             </div>
           </div>
 
           {/* Edit form */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <h2 className="text-base font-semibold text-slate-900 mb-4">Edit Profile</h2>
+          <div className="bg-[#111120] rounded-xl border border-[#1e1e35] p-6">
+            <h2 className="text-base font-semibold text-white mb-4">Edit Profile</h2>
             <form onSubmit={handleSave} className="space-y-4" noValidate>
               <div>
-                <label htmlFor="profile-name" className="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+                <label htmlFor="profile-name" className="block text-xs font-semibold text-slate-300 mb-1">Full Name</label>
                 <input id="profile-name" type="text" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="Your full name" className={inputClass} />
               </div>
               <div>
-                <label htmlFor="profile-email" className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                <label htmlFor="profile-email" className="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
                 <input id="profile-email" type="email" value={form.email} disabled className={inputClass} aria-label="Email cannot be changed" />
                 <p className="mt-1 text-xs text-slate-400">Email address cannot be changed.</p>
               </div>
               <div>
-                <label htmlFor="profile-dept" className="block text-xs font-semibold text-slate-700 mb-1">Department</label>
+                <label htmlFor="profile-dept" className="block text-xs font-semibold text-slate-300 mb-1">Department</label>
                 <input id="profile-dept" type="text" value={form.department} onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))} placeholder="e.g. Computer Science" className={inputClass} />
               </div>
               <button type="submit" disabled={saving} className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all duration-150">
@@ -113,11 +113,11 @@ function ProfilePage() {
           </div>
 
           {/* Read-only info */}
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <h2 className="text-base font-semibold text-slate-900 mb-4">Account Details</h2>
+          <div className="bg-[#111120] rounded-xl border border-[#1e1e35] p-6">
+            <h2 className="text-base font-semibold text-white mb-4">Account Details</h2>
             <dl className="space-y-3 text-sm">
               {[["Role", roleLabel], ["Student ID / ID", user?.student_id || user?.id || "—"], ["Clearance Status", user?.clearance_status || "—"], ["Account Created", user?.created_at ? new Date(user.created_at).toLocaleDateString() : "—"]].map(([k, v]) => (
-                <div key={k} className="flex justify-between py-2 border-b border-slate-100 last:border-b-0">
+                <div key={k} className="flex justify-between py-2 border-b border-[#1e1e35] last:border-b-0">
                   <dt className="text-slate-500">{k}</dt>
                   <dd className="font-medium text-slate-800 capitalize">{v}</dd>
                 </div>

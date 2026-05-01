@@ -2,7 +2,6 @@
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { clearAuth } from "../utils/auth";
-import NotificationBell from "./NotificationBell";
 
 const NAV_ICONS = {
   overview:   "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
@@ -62,18 +61,11 @@ function Navbar({ title, subtitle, user, navItems, activeKey, onNavigate, action
     .join("")
     .toUpperCase();
 
-  const roleColor = {
-    student:     "bg-blue-100 text-blue-700",
-    teacher:     "bg-amber-100 text-amber-700",
-    admin:       "bg-green-100 text-green-700",
-    super_admin: "bg-purple-100 text-purple-700",
-  }[user?.role] || "bg-slate-100 text-slate-700";
-
   return (
     <aside
       className={[
         "fixed inset-y-0 left-0 z-40 w-64 flex flex-col",
-        "bg-slate-900 text-white transition-transform duration-300",
+        "bg-[#0f0f1b] text-white transition-transform duration-300",
         isOpen ? "translate-x-0" : "-translate-x-full",
         "lg:translate-x-0 lg:static lg:flex",
         "sidebar-scrollbar overflow-y-auto",
@@ -81,41 +73,35 @@ function Navbar({ title, subtitle, user, navItems, activeKey, onNavigate, action
       aria-label="Sidebar navigation"
     >
       {/* Brand */}
-      <div className="px-6 pt-6 pb-4 border-b border-slate-700/60">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
+      <div className="px-6 pt-6 pb-4 border-b border-[#1e1e35]">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-violet-600 flex items-center justify-center shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
             </svg>
           </div>
-          <span className="text-sm font-semibold text-white tracking-wide">ClearPass</span>
-          <div className="ml-auto hidden lg:block">
-            <NotificationBell />
+          <div>
+            <p className="text-sm font-bold text-white tracking-wide">ClearPass</p>
+            <p className="text-[10px] text-slate-500 leading-tight">Smart Clearance. Simplified.</p>
           </div>
         </div>
-        <p className="text-xs text-slate-400 leading-relaxed mt-1 line-clamp-2">{subtitle}</p>
       </div>
 
       {/* User profile */}
-      <div className="px-4 py-4 border-b border-slate-700/60">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/60">
-          <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-sm font-semibold text-white shrink-0">
+      <div className="px-4 py-4 border-b border-[#1e1e35]">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1a1a2e]">
+          <div className="w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
             {initials}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-white truncate">{user?.name || "Loading…"}</p>
-            <p className="text-xs text-slate-400 truncate">{user?.email || ""}</p>
+            <p className="text-sm font-semibold text-white truncate">{user?.name || "Loading\u2026"}</p>
+            <p className="text-xs text-slate-500 truncate capitalize">{user?.role?.replace("_", " ") || ""}</p>
           </div>
-        </div>
-        <div className="mt-2 px-1">
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${roleColor}`}>
-            {user?.role?.replace("_", " ") || "user"}
-          </span>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1" aria-label="Dashboard navigation">
+      <nav className="flex-1 px-3 py-4 space-y-0.5" aria-label="Dashboard navigation">
         {navItems.map((item) => {
           const isActive = activeKey === item.key;
           const iconPath = NAV_ICONS[item.key] || NAV_ICONS.overview;
@@ -126,19 +112,19 @@ function Navbar({ title, subtitle, user, navItems, activeKey, onNavigate, action
               onClick={() => handleNavClick(item)}
               aria-current={isActive ? "page" : undefined}
               className={[
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 group",
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 group relative",
                 isActive
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white",
+                  ? "bg-violet-500/15 text-white border-l-2 border-violet-500 rounded-l-none pl-[10px]"
+                  : "text-slate-400 hover:bg-[#1a1a2e] hover:text-slate-200",
               ].join(" ")}
             >
-              <span className={isActive ? "text-white" : "text-slate-400 group-hover:text-white"}>
+              <span className={isActive ? "text-violet-400" : "text-slate-500 group-hover:text-slate-300"}>
                 <NavIcon path={iconPath} />
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{item.label}</p>
                 {item.caption && (
-                  <p className={`text-xs truncate ${isActive ? "text-blue-200" : "text-slate-500 group-hover:text-slate-400"}`}>
+                  <p className={`text-xs truncate ${isActive ? "text-violet-300/70" : "text-slate-600 group-hover:text-slate-500"}`}>
                     {item.caption}
                   </p>
                 )}
@@ -149,12 +135,12 @@ function Navbar({ title, subtitle, user, navItems, activeKey, onNavigate, action
       </nav>
 
       {/* Footer actions */}
-      <div className="px-3 py-4 border-t border-slate-700/60 space-y-2">
+      <div className="px-3 py-4 border-t border-[#1e1e35] space-y-1">
         {/* Dark / Light toggle */}
         <button
           type="button"
           onClick={toggle}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all duration-150 text-sm"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-slate-400 hover:bg-[#1a1a2e] hover:text-white transition-all duration-150 text-sm"
           aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
         >
           {dark ? (

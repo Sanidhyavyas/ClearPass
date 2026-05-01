@@ -20,20 +20,20 @@ const navItems = [
   { key: "audit",     label: "Audit Log",       caption: "Track all approval and assignment actions" },
 ];
 
-const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150";
+const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-[#252550] bg-[#1a1a2e] text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-150";
 
 function StatCard({ label, value, color = "default", icon }) {
   const colorMap = {
-    default: { text: "text-slate-900", icon: "bg-slate-100 text-slate-600" },
-    blue:    { text: "text-blue-700",  icon: "bg-blue-50 text-blue-600"    },
-    amber:   { text: "text-amber-700", icon: "bg-amber-50 text-amber-600"  },
-    green:   { text: "text-green-700", icon: "bg-green-50 text-green-600"  },
-    red:     { text: "text-red-700",   icon: "bg-red-50 text-red-600"      },
-    purple:  { text: "text-purple-700",icon: "bg-purple-50 text-purple-600"},
+    default: { text: "text-white",       icon: "bg-slate-800 text-slate-300"      },
+    blue:    { text: "text-blue-300",    icon: "bg-blue-500/20 text-blue-400"     },
+    amber:   { text: "text-amber-300",   icon: "bg-amber-500/20 text-amber-400"   },
+    green:   { text: "text-green-300",   icon: "bg-green-500/20 text-green-400"   },
+    red:     { text: "text-red-300",     icon: "bg-red-500/20 text-red-400"       },
+    purple:  { text: "text-violet-300",  icon: "bg-violet-500/20 text-violet-400" },
   };
   const s = colorMap[color] || colorMap.default;
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
+    <div className="bg-[#111120] rounded-xl border border-[#1e1e35] p-5">
       {icon && (
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${s.icon} mb-3`}>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -42,7 +42,7 @@ function StatCard({ label, value, color = "default", icon }) {
         </div>
       )}
       <p className={`text-3xl font-bold ${s.text}`}>{value}</p>
-      <p className="text-sm text-slate-500 mt-1">{label}</p>
+      <p className="text-sm text-slate-400 mt-1">{label}</p>
     </div>
   );
 }
@@ -50,10 +50,10 @@ function StatCard({ label, value, color = "default", icon }) {
 function EmptyState({ title, desc }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-slate-200 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
       </svg>
-      <p className="text-sm font-semibold text-slate-600">{title}</p>
+      <p className="text-sm font-semibold text-slate-400">{title}</p>
       <p className="text-xs text-slate-400 mt-1">{desc}</p>
     </div>
   );
@@ -313,8 +313,8 @@ function AdminDashboard() {
 
   const THead = ({ cols }) => (
     <thead>
-      <tr className="border-b border-slate-100 bg-slate-50/60">
-        {cols.map((c) => <th key={c} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">{c}</th>)}
+      <tr className="border-b border-[#1e1e35] bg-[#1a1a2e]/40">
+        {cols.map((c) => <th key={c} className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wide">{c}</th>)}
       </tr>
     </thead>
   );
@@ -399,19 +399,19 @@ function AdminDashboard() {
                   )}
                   {/* Recent audit log entries */}
                   {(analytics.recent_audit || []).length > 0 && (
-                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                      <div className="px-5 py-3 border-b border-slate-100">
-                        <h3 className="text-sm font-semibold text-slate-700">Recent System Activity</h3>
+                    <div className="bg-[#111120] rounded-xl border border-[#1e1e35] overflow-hidden">
+                      <div className="px-5 py-3 border-b border-[#1e1e35]">
+                        <h3 className="text-sm font-semibold text-slate-300">Recent System Activity</h3>
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <THead cols={["Action", "Performed By", "Details", "Date"]} />
-                          <tbody className="divide-y divide-slate-100">
+                          <tbody className="divide-y divide-[#1e1e35]">
                             {(analytics.recent_audit || []).map((log, i) => (
-                              <tr key={log.id ?? i} className="hover:bg-slate-50/60">
-                                <td className="px-4 py-3"><span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-700">{log.action}</span></td>
-                                <td className="px-4 py-3 text-slate-600">{log.user_name_display || log.user_name || "—"}</td>
-                                <td className="px-4 py-3 text-slate-500 max-w-xs truncate">{log.details || "—"}</td>
+                              <tr key={log.id ?? i} className="hover:bg-[#1a1a2e]/60">
+                                <td className="px-4 py-3"><span className="text-xs font-medium px-2 py-0.5 rounded bg-[#1a1a2e] text-slate-300">{log.action}</span></td>
+                                <td className="px-4 py-3 text-slate-400">{log.user_name_display || log.user_name || "—"}</td>
+                                <td className="px-4 py-3 text-slate-400 max-w-xs truncate">{log.details || "—"}</td>
                                 <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{log.created_at ? new Date(log.created_at).toLocaleString() : "—"}</td>
                               </tr>
                             ))}
@@ -481,7 +481,7 @@ function AdminDashboard() {
                   <select
                     value={feeStatusFilter}
                     onChange={(e) => setFeeStatusFilter(e.target.value)}
-                    className="px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:w-44"
+                    className="px-3 py-2.5 text-sm border border-[#252550] rounded-lg bg-[#111120] focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:w-44"
                     aria-label="Filter by fee status"
                   >
                     <option value="all">All statuses</option>
@@ -492,7 +492,7 @@ function AdminDashboard() {
                 </div>
 
                 {/* Table */}
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35] overflow-hidden">
                   {feesLoading ? (
                     <div className="p-10 text-center text-slate-400 text-sm animate-pulse">Loading…</div>
                   ) : filteredFees.length === 0 ? (
@@ -504,7 +504,7 @@ function AdminDashboard() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm" aria-label="Fee approval table">
                         <THead cols={["Student", "Roll No.", "Dept", "Sem / Year", "Submitted", "Fee Status", "Actions"]} />
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#1e1e35]">
                           {filteredFees.map((r) => {
                             const feeStatus = r.fee_status || "pending";
                             const feePill =
@@ -513,22 +513,22 @@ function AdminDashboard() {
                               : "bg-amber-100 text-amber-700";
                             const isProcessing = processingFee === r.id;
                             return (
-                              <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
+                              <tr key={r.id} className="hover:bg-[#1a1a2e]/60 transition-colors">
                                 {/* Student */}
                                 <td className="px-4 py-3">
-                                  <p className="font-medium text-slate-800">{r.student_name || "—"}</p>
+                                  <p className="font-medium text-slate-200">{r.student_name || "—"}</p>
                                   <p className="text-xs text-slate-400">{r.student_email || ""}</p>
                                 </td>
                                 {/* Roll No. */}
                                 <td className="px-4 py-3">
-                                  <span className="font-mono text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{r.roll_number || "—"}</span>
+                                  <span className="font-mono text-xs bg-[#1a1a2e] text-slate-400 px-2 py-0.5 rounded">{r.roll_number || "—"}</span>
                                 </td>
                                 {/* Department */}
-                                <td className="px-4 py-3 text-slate-600">{r.department || "—"}</td>
+                                <td className="px-4 py-3 text-slate-400">{r.department || "—"}</td>
                                 {/* Sem / Year */}
-                                <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{r.semester || "—"} / {r.year || "—"}</td>
+                                <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{r.semester || "—"} / {r.year || "—"}</td>
                                 {/* Submitted */}
-                                <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{r.created_at ? new Date(r.created_at).toLocaleDateString() : "—"}</td>
+                                <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{r.created_at ? new Date(r.created_at).toLocaleDateString() : "—"}</td>
                                 {/* Fee Status */}
                                 <td className="px-4 py-3">
                                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${feePill}`}>{feeStatus}</span>
@@ -568,7 +568,7 @@ function AdminDashboard() {
                                         value={feeRemarksMap[r.id] || ""}
                                         onChange={(e) => setFeeRemarksMap((m) => ({ ...m, [r.id]: e.target.value }))}
                                         placeholder="Rejection reason (required to reject)…"
-                                        className="px-2 py-1 text-xs border border-slate-200 rounded w-52 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                                        className="px-2 py-1 text-xs border border-[#1e1e35] rounded w-52 focus:outline-none focus:ring-1 focus:ring-emerald-400"
                                       />
                                     </div>
                                   )}
@@ -577,7 +577,7 @@ function AdminDashboard() {
                                       type="button"
                                       onClick={() => handleFeeApproval(r.id, "rejected", "Revoked by admin")}
                                       disabled={isProcessing}
-                                      className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-colors"
+                                      className="px-3 py-1.5 bg-red-500/15 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-colors"
                                     >
                                       {isProcessing ? "…" : "Revoke"}
                                     </button>
@@ -603,17 +603,17 @@ function AdminDashboard() {
                 <p className="text-purple-100 text-sm mt-1">{pendingFinal.length} request{pendingFinal.length !== 1 ? "s" : ""} awaiting your final decision.</p>
               </div>
               {pendingFinal.length === 0 ? (
-                <div className="bg-white rounded-xl border border-slate-200">
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35]">
                   <EmptyState title="Queue is empty" desc="All requests have been finalized." />
                 </div>
               ) : (
                 <div className="space-y-3">
                   {pendingFinal.map((r) => (
-                    <div key={r.id} className="bg-white rounded-xl border border-slate-200 p-5">
+                    <div key={r.id} className="bg-[#111120] rounded-xl border border-[#1e1e35] p-5">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="font-semibold text-slate-800">{r.student_name}</p>
-                          <p className="text-xs text-slate-500">{r.student_email} · {r.department || "—"} · {r.roll_number || "—"}</p>
+                          <p className="font-semibold text-slate-200">{r.student_name}</p>
+                          <p className="text-xs text-slate-400">{r.student_email} · {r.department || "—"} · {r.roll_number || "—"}</p>
                           <p className="text-xs text-slate-400 mt-1">Submitted {r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : "—"}</p>
                         </div>
                         <span className="text-xs font-semibold px-2 py-1 rounded-full bg-purple-100 text-purple-700 shrink-0">Ready to Finalize</span>
@@ -624,7 +624,7 @@ function AdminDashboard() {
                           onChange={(e) => setFinalRemarks((m) => ({ ...m, [r.id]: e.target.value }))}
                           placeholder="Remarks / rejection reason (required for rejection)…"
                           rows={2}
-                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 text-sm border border-[#1e1e35] rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                       <div className="flex gap-2 mt-3">
@@ -657,7 +657,7 @@ function AdminDashboard() {
             <div className="space-y-4">
               {/* Tab bar + Create User button */}
               <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
+                <div className="flex gap-1 bg-[#1a1a2e] rounded-lg p-1">
                   {[
                     { key: "students", label: "Students" },
                     { key: "teachers", label: "Teachers" },
@@ -669,8 +669,8 @@ function AdminDashboard() {
                       onClick={() => setUserTab(t.key)}
                       className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                         userTab === t.key
-                          ? "bg-white text-slate-900 shadow-sm"
-                          : "text-slate-500 hover:text-slate-700"
+                          ? "bg-[#111120] text-white shadow-sm"
+                          : "text-slate-400 hover:text-slate-300"
                       }`}
                     >
                       {t.label}
@@ -696,8 +696,8 @@ function AdminDashboard() {
 
               {/* ADDED: Create User inline form */}
               {showCreateUser && (
-                <div className="bg-white rounded-xl border border-slate-200 p-5">
-                  <h3 className="text-sm font-semibold text-slate-800 mb-4">Create New User</h3>
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35] p-5">
+                  <h3 className="text-sm font-semibold text-slate-200 mb-4">Create New User</h3>
                   <form onSubmit={handleCreateUser} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input
                       required
@@ -763,7 +763,7 @@ function AdminDashboard() {
 
               {/* ADDED: Tab 1 — Students */}
               {userTab === "students" && (
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35] overflow-hidden">
                   {usersTabLoading ? (
                     <div className="p-8 text-center text-slate-400 text-sm">Loading…</div>
                   ) : studentsList.filter((s) => {
@@ -775,23 +775,23 @@ function AdminDashboard() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm" aria-label="Students table">
                         <THead cols={["Name", "Student Code", "TGC", "Email"]} />
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#1e1e35]">
                           {studentsList.filter((s) => {
                             const q = userSearch.trim().toLowerCase();
                             return !q || s.name?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q) || s.student_code?.toLowerCase().includes(q);
                           }).map((s) => (
-                            <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
+                            <tr key={s.id} className="hover:bg-[#1a1a2e]/60 transition-colors">
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2.5">
                                   <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-700 shrink-0">
                                     {(s.name || "S").charAt(0).toUpperCase()}
                                   </div>
-                                  <span className="font-medium text-slate-800">{s.name}</span>
+                                  <span className="font-medium text-slate-200">{s.name}</span>
                                 </div>
                               </td>
-                              <td className="px-4 py-3"><span className="font-mono text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{s.student_code || "—"}</span></td>
-                              <td className="px-4 py-3 text-slate-700 font-medium">{s.tgc ?? 0}</td>
-                              <td className="px-4 py-3 text-slate-500">{s.email}</td>
+                              <td className="px-4 py-3"><span className="font-mono text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">{s.student_code || "—"}</span></td>
+                              <td className="px-4 py-3 text-slate-300 font-medium">{s.tgc ?? 0}</td>
+                              <td className="px-4 py-3 text-slate-400">{s.email}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -803,7 +803,7 @@ function AdminDashboard() {
 
               {/* ADDED: Tab 2 — Teachers */}
               {userTab === "teachers" && (
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35] overflow-hidden">
                   {usersTabLoading ? (
                     <div className="p-8 text-center text-slate-400 text-sm">Loading…</div>
                   ) : teachersList.filter((t) => {
@@ -815,22 +815,22 @@ function AdminDashboard() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm" aria-label="Teachers table">
                         <THead cols={["Name", "Email", "Department"]} />
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#1e1e35]">
                           {teachersList.filter((t) => {
                             const q = userSearch.trim().toLowerCase();
                             return !q || t.name?.toLowerCase().includes(q) || t.email?.toLowerCase().includes(q);
                           }).map((t) => (
-                            <tr key={t.id} className="hover:bg-slate-50/60 transition-colors">
+                            <tr key={t.id} className="hover:bg-[#1a1a2e]/60 transition-colors">
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2.5">
                                   <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-xs font-semibold text-amber-700 shrink-0">
                                     {(t.name || "T").charAt(0).toUpperCase()}
                                   </div>
-                                  <span className="font-medium text-slate-800">{t.name}</span>
+                                  <span className="font-medium text-slate-200">{t.name}</span>
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-slate-500">{t.email}</td>
-                              <td className="px-4 py-3 text-slate-500">{t.department || "—"}</td>
+                              <td className="px-4 py-3 text-slate-400">{t.email}</td>
+                              <td className="px-4 py-3 text-slate-400">{t.department || "—"}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -842,7 +842,7 @@ function AdminDashboard() {
 
               {/* ADDED: Tab 3 — Admins */}
               {userTab === "admins" && (
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35] overflow-hidden">
                   {usersTabLoading ? (
                     <div className="p-8 text-center text-slate-400 text-sm">Loading…</div>
                   ) : adminsList.filter((a) => {
@@ -854,25 +854,25 @@ function AdminDashboard() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm" aria-label="Admins table">
                         <THead cols={["Name", "Email", "Role"]} />
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#1e1e35]">
                           {adminsList.filter((a) => {
                             const q = userSearch.trim().toLowerCase();
                             return !q || a.name?.toLowerCase().includes(q) || a.email?.toLowerCase().includes(q);
                           }).map((a) => {
-                            const roleColor = { admin: "bg-green-50 text-green-700 ring-green-200", super_admin: "bg-purple-50 text-purple-700 ring-purple-200" };
+                            const roleColor = { admin: "bg-green-500/20 text-green-300 ring-green-500/30", super_admin: "bg-violet-500/20 text-violet-300 ring-violet-500/30" };
                             return (
-                              <tr key={a.id} className="hover:bg-slate-50/60 transition-colors">
+                              <tr key={a.id} className="hover:bg-[#1a1a2e]/60 transition-colors">
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-2.5">
                                     <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-xs font-semibold text-green-700 shrink-0">
                                       {(a.name || "A").charAt(0).toUpperCase()}
                                     </div>
-                                    <span className="font-medium text-slate-800">{a.name}</span>
+                                    <span className="font-medium text-slate-200">{a.name}</span>
                                   </div>
                                 </td>
-                                <td className="px-4 py-3 text-slate-500">{a.email}</td>
+                                <td className="px-4 py-3 text-slate-400">{a.email}</td>
                                 <td className="px-4 py-3">
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ring-1 capitalize ${roleColor[a.role] || "bg-slate-50 text-slate-600 ring-slate-200"}`}>{a.role}</span>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ring-1 capitalize ${roleColor[a.role] || "bg-[#0f0f1b] text-slate-400 ring-slate-200"}`}>{a.role}</span>
                                 </td>
                               </tr>
                             );
@@ -894,21 +894,21 @@ function AdminDashboard() {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                   <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search requests…" className={`${inputClass} pl-9`} aria-label="Search requests" />
                 </div>
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-44" aria-label="Filter by status">
+                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2.5 text-sm border border-[#252550] rounded-lg bg-[#111120] focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-44" aria-label="Filter by status">
                   <option value="all">All statuses</option>
                   <option value="pending">Pending</option>
                   <option value="approved">Approved</option>
                   <option value="rejected">Rejected</option>
                 </select>
               </div>
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div className="bg-[#111120] rounded-xl border border-[#1e1e35] overflow-hidden">
                 {filteredRequests.length === 0 ? (
                   <EmptyState title="No requests found" desc="Try adjusting your search or filter." />
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm" aria-label="Requests table">
                       <THead cols={["Student", "Status", "Stage", "Fee Status", "Assigned Teacher", "Date", "Actions"]} />
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-[#1e1e35]">
                         {filteredRequests.map((r) => {
                           const STAGE_LABELS = { teacher: "With Teacher", hod: "With HOD", admin: "With Admin", completed: "Completed" };
                           const stageLabel = STAGE_LABELS[r.current_stage] || r.current_stage || "—";
@@ -918,9 +918,9 @@ function AdminDashboard() {
                             r.current_stage === "hod"       ? "bg-orange-100 text-orange-700" :
                                                                "bg-blue-100 text-blue-700";
                           return (
-                          <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
+                          <tr key={r.id} className="hover:bg-[#1a1a2e]/60 transition-colors">
                             <td className="px-4 py-3">
-                              <p className="font-medium text-slate-800">{r.student_name}</p>
+                              <p className="font-medium text-slate-200">{r.student_name}</p>
                               <p className="text-xs text-slate-400">{r.student_email}</p>
                             </td>
                             <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
@@ -936,8 +936,8 @@ function AdminDashboard() {
                                 Fee: {r.fee_status || "pending"}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-slate-600">{r.assigned_teacher_name || <span className="text-slate-400">—</span>}</td>
-                            <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
+                            <td className="px-4 py-3 text-slate-400">{r.assigned_teacher_name || <span className="text-slate-400">—</span>}</td>
+                            <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
                             {r.status === "pending" && (
                               <td className="px-4 py-3">
                                 <div className="flex flex-col gap-1.5">
@@ -946,7 +946,7 @@ function AdminDashboard() {
                                     placeholder="Remarks…"
                                     value={directRemarksMap[r.id] || ""}
                                     onChange={(e) => setDirectRemarksMap((m) => ({ ...m, [r.id]: e.target.value }))}
-                                    className="px-2 py-1 text-xs border border-slate-200 rounded w-36 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                    className="px-2 py-1 text-xs border border-[#1e1e35] rounded w-36 focus:outline-none focus:ring-1 focus:ring-blue-400"
                                   />
                                   <div className="flex gap-1">
                                     <button
@@ -985,31 +985,31 @@ function AdminDashboard() {
           {activeKey === "assign" && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Assign Teachers</h2>
-                <p className="text-sm text-slate-500 mt-0.5">{unassignedRequests.length} unassigned request{unassignedRequests.length !== 1 ? "s" : ""} waiting.</p>
+                <h2 className="text-xl font-bold text-white">Assign Teachers</h2>
+                <p className="text-sm text-slate-400 mt-0.5">{unassignedRequests.length} unassigned request{unassignedRequests.length !== 1 ? "s" : ""} waiting.</p>
               </div>
               {unassignedRequests.length === 0 ? (
-                <div className="bg-white rounded-xl border border-slate-200">
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35]">
                   <EmptyState title="All requests are assigned" desc="Every request has been assigned to a teacher." />
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-[#111120] rounded-xl border border-[#1e1e35] overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm" aria-label="Assign teachers table">
                       <THead cols={["Student", "Submitted", "Assign Teacher", ""]} />
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-[#1e1e35]">
                         {unassignedRequests.map((r) => (
-                          <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
+                          <tr key={r.id} className="hover:bg-[#1a1a2e]/60 transition-colors">
                             <td className="px-4 py-3">
-                              <p className="font-medium text-slate-800">{r.student_name}</p>
+                              <p className="font-medium text-slate-200">{r.student_name}</p>
                               <p className="text-xs text-slate-400">{r.student_email}</p>
                             </td>
-                            <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
+                            <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
                             <td className="px-4 py-3">
                               <select
                                 value={assignmentMap[r.id] || ""}
                                 onChange={(e) => setAssignmentMap((m) => ({ ...m, [r.id]: e.target.value }))}
-                                className="px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-52"
+                                className="px-2.5 py-1.5 text-sm border border-[#252550] rounded-lg bg-[#111120] focus:outline-none focus:ring-2 focus:ring-blue-500 w-52"
                                 aria-label={`Assign teacher for ${r.student_name}`}
                               >
                                 <option value="">Select teacher…</option>
@@ -1040,10 +1040,10 @@ function AdminDashboard() {
           {activeKey === "audit" && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Audit Log</h2>
-                <p className="text-sm text-slate-500 mt-0.5">Complete history of all system actions.</p>
+                <h2 className="text-xl font-bold text-white">Audit Log</h2>
+                <p className="text-sm text-slate-400 mt-0.5">Complete history of all system actions.</p>
               </div>
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div className="bg-[#111120] rounded-xl border border-[#1e1e35] overflow-hidden">
                 {auditLoading ? (
                   <table className="w-full text-sm"><THead cols={["Action", "User", "Details", "Date"]} /><tbody><SkeletonTableRows rows={6} cols={4} /></tbody></table>
                 ) : auditLogs.length === 0 ? (
@@ -1052,14 +1052,14 @@ function AdminDashboard() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm" aria-label="Audit log table">
                       <THead cols={["Action", "Performed By", "Details", "Date"]} />
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-[#1e1e35]">
                         {auditLogs.map((log, i) => (
-                          <tr key={log.id ?? i} className="hover:bg-slate-50/60 transition-colors">
+                          <tr key={log.id ?? i} className="hover:bg-[#1a1a2e]/60 transition-colors">
                             <td className="px-4 py-3">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-xs font-medium">{log.action || "—"}</span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#1a1a2e] text-slate-300 text-xs font-medium">{log.action || "—"}</span>
                             </td>
-                            <td className="px-4 py-3 text-slate-600">{log.performed_by || log.user_name || "—"}</td>
-                            <td className="px-4 py-3 text-slate-500 max-w-xs truncate">{log.details || "—"}</td>
+                            <td className="px-4 py-3 text-slate-400">{log.performed_by || log.user_name || "—"}</td>
+                            <td className="px-4 py-3 text-slate-400 max-w-xs truncate">{log.details || "—"}</td>
                             <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{log.created_at ? new Date(log.created_at).toLocaleString() : "—"}</td>
                           </tr>
                         ))}
