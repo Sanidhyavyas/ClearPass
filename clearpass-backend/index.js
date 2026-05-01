@@ -25,6 +25,9 @@ const tgcSubjectRoutes        = require("./routes/tgcSubjectRoutes");
 const checklistRoutes         = require("./routes/checklistRoutes");
 const tgcCertRoutes           = require("./routes/tgcCertRoutes");
 const assignmentRoutes        = require("./routes/assignmentRoutes");
+// Smart platform additions
+const notificationRoutes      = require("./routes/notificationRoutes");
+const { authLimiter, apiLimiter } = require("./middleware/rateLimiter");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -36,6 +39,10 @@ app.use(
   })
 );
 app.use(express.json());
+
+// ── Rate limiting ────────────────────────────────────────────────────────
+app.use("/api/auth", authLimiter);
+app.use("/api", apiLimiter);
 
 // ── Request / Response logger (must come after express.json) ────────────
 app.use(requestLogger);
@@ -71,6 +78,8 @@ app.use("/api/subjects",     tgcSubjectRoutes);    // TGC subject management
 app.use("/api/checklist",    checklistRoutes);     // Checklist builder + progress
 app.use("/api/certificate",  tgcCertRoutes);       // TGC certificate request/download
 app.use("/api/assignments",  assignmentRoutes);    // Assignment system
+// Smart platform additions
+app.use("/api/notifications", notificationRoutes); // Notification system
 
 app.use((req, res) => {
   res.status(404).json({

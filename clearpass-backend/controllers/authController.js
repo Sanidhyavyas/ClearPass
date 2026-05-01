@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const db = require("../db");
 
@@ -37,6 +38,21 @@ const buildAuthResponse = (user, authSource = "users") => {
     user: userData,
   };
 };
+
+/**
+ * Issue a long-lived refresh token for a user.
+ * Stores it in the refresh_tokens table with a 30-day expiry.
+ */
+async function issueRefreshToken(userId) {
+  const token     = crypto.randomBytes(64).toString("hex");
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+  await db.query(
+    `INSERT INTO refresh_tokens (user_id, token, expires_at)
+     VALUES ($1, $2, $3)`,
+    [userId, token, expiresAt]
+  );
+  return token;
+}
 
 const register = async (req, res, next) => {
   try {
@@ -110,7 +126,10 @@ const login = async (req, res, next) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    return res.json(buildAuthResponse(user));
+    const authResponse    = buildAuthResponse(user);
+    const refreshToken    = await issueRefreshToken(user.id).catch(() => null);
+
+    return res.json({ ...authResponse, refreshToken });
   } catch (error) {
     return next(error);
   }
@@ -490,6 +509,74 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+/**
+ * POST /api/auth/refresh
+ * Exchange a valid refresh token for a new access token.
+ */
+const refreshToken = async (req, res, next) => {
+  try {
+    const { refreshToken: token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: "Refresh token is required" });
+    }
+
+    const { rows } = await db.query(
+      `SELECT rt.id, rt.user_id, rt.expires_at, rt.revoked,
+              u.id as uid, u.name, u.email, u.role, u.department, u.year, u.semester
+       FROM refresh_tokens rt
+       JOIN users u ON u.id = rt.user_id
+       WHERE rt.token = $1
+       LIMIT 1`,
+      [token]
+    );
+
+    if (!rows.length) {
+      return res.status(401).json({ message: "Invalid refresh token" });
+    }
+
+    const row = rows[0];
+
+    if (row.revoked) {
+      return res.status(401).json({ message: "Refresh token has been revoked" });
+    }
+
+    if (new Date(row.expires_at) < new Date()) {
+      return res.status(401).json({ message: "Refresh token has expired" });
+    }
+
+    // Rotate: revoke old token, issue new pair
+    await db.query("UPDATE refresh_tokens SET revoked = TRUE WHERE id = $1", [row.id]);
+
+    const user            = { id: row.uid, name: row.name, email: row.email, role: row.role, department: row.department, year: row.year, semester: row.semester };
+    const authResponse    = buildAuthResponse(user);
+    const newRefreshToken = await issueRefreshToken(user.id);
+
+    return res.json({ ...authResponse, refreshToken: newRefreshToken });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
+ * POST /api/auth/logout
+ * Revokes the provided refresh token.
+ */
+const logout = async (req, res, next) => {
+  try {
+    const { refreshToken: token } = req.body;
+    if (token) {
+      await db.query(
+        "UPDATE refresh_tokens SET revoked = TRUE WHERE token = $1",
+        [token]
+      ).catch(() => {}); // non-fatal
+    }
+    return res.json({ message: "Logged out successfully" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   createUser,
   deleteUser,
@@ -499,6 +586,8 @@ module.exports = {
   getAdmins,
   getCurrentUser,
   login,
+  logout,
+  refreshToken,
   register,
   updateProfile,
   updateUser,

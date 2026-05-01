@@ -1,6 +1,7 @@
 // --- DASHBOARD LAYOUT ---
 import { useEffect, useState } from "react";
 import Navbar from "./Navbar";
+import NotificationBell from "./NotificationBell";
 
 function DashboardLayout({
   title,
@@ -62,6 +63,9 @@ function DashboardLayout({
             </svg>
           </button>
           <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">ClearPass</span>
+          <div className="ml-auto">
+            <NotificationBell />
+          </div>
         </header>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">

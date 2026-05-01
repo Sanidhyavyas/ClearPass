@@ -2,6 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { clearAuth } from "../utils/auth";
+import NotificationBell from "./NotificationBell";
 
 const NAV_ICONS = {
   overview:   "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
@@ -88,6 +89,9 @@ function Navbar({ title, subtitle, user, navItems, activeKey, onNavigate, action
             </svg>
           </div>
           <span className="text-sm font-semibold text-white tracking-wide">ClearPass</span>
+          <div className="ml-auto hidden lg:block">
+            <NotificationBell />
+          </div>
         </div>
         <p className="text-xs text-slate-400 leading-relaxed mt-1 line-clamp-2">{subtitle}</p>
       </div>
