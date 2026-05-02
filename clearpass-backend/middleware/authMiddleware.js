@@ -91,6 +91,9 @@ const authorizeRoles = (...roles) => (req, res, next) => {
   }
 
   if (!roles.includes(req.user.role)) {
+    console.warn(
+      `[authorizeRoles] DENIED — user ${req.user.id} has role="${req.user.role}", required: [${roles.join(", ")}] — ${req.method} ${req.originalUrl}`
+    );
     return res.status(403).json({
       message: "Forbidden: insufficient permissions"
     });
