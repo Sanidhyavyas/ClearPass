@@ -65,15 +65,15 @@ function Navbar({ title, subtitle, user, navItems, activeKey, onNavigate, action
     <aside
       className={[
         "fixed inset-y-0 left-0 z-40 w-64 flex flex-col",
-        "bg-[#0f0f1b] text-white transition-transform duration-300",
+        "bg-panel text-ink transition-transform duration-300 theme-transition",
         isOpen ? "translate-x-0" : "-translate-x-full",
         "lg:translate-x-0 lg:static lg:flex",
-        "sidebar-scrollbar overflow-y-auto",
+        "sidebar-scrollbar overflow-y-auto border-r border-subtle",
       ].join(" ")}
       aria-label="Sidebar navigation"
     >
       {/* Brand */}
-      <div className="px-6 pt-6 pb-4 border-b border-[#1e1e35]">
+      <div className="px-6 pt-6 pb-4 border-b border-subtle">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-violet-600 flex items-center justify-center shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -81,21 +81,21 @@ function Navbar({ title, subtitle, user, navItems, activeKey, onNavigate, action
             </svg>
           </div>
           <div>
-            <p className="text-sm font-bold text-white tracking-wide">ClearPass</p>
-            <p className="text-[10px] text-slate-500 leading-tight">Smart Clearance. Simplified.</p>
+            <p className="text-sm font-bold text-ink tracking-wide">ClearPass</p>
+            <p className="text-[10px] text-ink3 leading-tight">Smart Clearance. Simplified.</p>
           </div>
         </div>
       </div>
 
       {/* User profile */}
-      <div className="px-4 py-4 border-b border-[#1e1e35]">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1a1a2e]">
+      <div className="px-4 py-4 border-b border-subtle">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-raised theme-transition">
           <div className="w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
             {initials}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{user?.name || "Loading\u2026"}</p>
-            <p className="text-xs text-slate-500 truncate capitalize">{user?.role?.replace("_", " ") || ""}</p>
+            <p className="text-sm font-semibold text-ink truncate">{user?.name || "Loading\u2026"}</p>
+            <p className="text-xs text-ink3 truncate capitalize">{user?.role?.replace("_", " ") || ""}</p>
           </div>
         </div>
       </div>
@@ -114,17 +114,17 @@ function Navbar({ title, subtitle, user, navItems, activeKey, onNavigate, action
               className={[
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 group relative",
                 isActive
-                  ? "bg-violet-500/15 text-white border-l-2 border-violet-500 rounded-l-none pl-[10px]"
-                  : "text-slate-400 hover:bg-[#1a1a2e] hover:text-slate-200",
+                  ? "bg-violet-500/15 text-violet-700 dark:text-white border-l-2 border-violet-500 rounded-l-none pl-[10px]"
+                  : "text-ink2 hover:bg-raised hover:text-ink",
               ].join(" ")}
             >
-              <span className={isActive ? "text-violet-400" : "text-slate-500 group-hover:text-slate-300"}>
+              <span className={isActive ? "text-violet-500" : "text-ink3 group-hover:text-ink2"}>
                 <NavIcon path={iconPath} />
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{item.label}</p>
                 {item.caption && (
-                  <p className={`text-xs truncate ${isActive ? "text-violet-300/70" : "text-slate-600 group-hover:text-slate-500"}`}>
+                  <p className={`text-xs truncate ${isActive ? "text-violet-500/70" : "text-ink3 group-hover:text-ink3"}`}>
                     {item.caption}
                   </p>
                 )}
@@ -135,12 +135,12 @@ function Navbar({ title, subtitle, user, navItems, activeKey, onNavigate, action
       </nav>
 
       {/* Footer actions */}
-      <div className="px-3 py-4 border-t border-[#1e1e35] space-y-1">
+      <div className="px-3 py-4 border-t border-subtle space-y-1">
         {/* Dark / Light toggle */}
         <button
           type="button"
           onClick={toggle}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-slate-400 hover:bg-[#1a1a2e] hover:text-white transition-all duration-150 text-sm"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-ink2 hover:bg-raised hover:text-ink transition-all duration-150 text-sm"
           aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
         >
           {dark ? (

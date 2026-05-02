@@ -20,6 +20,16 @@ module.exports = {
           800: "#1e40af",
           900: "#1e3a8a",
         },
+        // ── Semantic surface tokens (auto-switch via CSS variables) ──────
+        page:    "var(--c-page)",    // main page background
+        panel:   "var(--c-panel)",   // sidebar / top-bar background
+        card:    "var(--c-card)",    // card background
+        raised:  "var(--c-raised)",  // inputs, hover fills, elevated areas
+        subtle:  "var(--c-border)",  // subtle border / divider colour
+        strong:  "var(--c-border-strong)", // default border colour
+        ink:     "var(--c-ink)",     // primary text
+        ink2:    "var(--c-ink2)",    // secondary text
+        ink3:    "var(--c-ink3)",    // muted / placeholder text
       },
       animation: {
         "slide-in": "slideIn 0.25s ease-out",
