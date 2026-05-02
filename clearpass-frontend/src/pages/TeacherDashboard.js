@@ -173,7 +173,7 @@ function TeacherDashboard() {
   // ADDED: active tab state
   const [activeTab, setActiveTab] = useState("requests");
 
-  const [stats, setStats]     = useState({ total: 0, pending: 0, approved: 0, rejected: 0, overdue: 0 });
+  const [stats, setStats]     = useState({ total: 0, pending: 0, approved: 0, rejected: 0, overdue: 0, total_students: 0 });
   const [requests, setRequests] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
