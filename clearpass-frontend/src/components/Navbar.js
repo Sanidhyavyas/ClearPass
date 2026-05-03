@@ -1,6 +1,5 @@
 // --- SIDEBAR / NAVBAR ---
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "../context/ThemeContext";
 import { clearAuth } from "../utils/auth";
 
 const NAV_ICONS = {
@@ -39,7 +38,6 @@ function NavIcon({ path }) {
 
 function Navbar({ title, subtitle, user, navItems, activeKey, onNavigate, actions, isOpen }) {
   const navigate = useNavigate();
-  const { dark, toggle } = useTheme();
 
   const handleNavClick = (item) => {
     if (item.href) {
@@ -136,24 +134,6 @@ function Navbar({ title, subtitle, user, navItems, activeKey, onNavigate, action
 
       {/* Footer actions */}
       <div className="px-3 py-4 border-t border-subtle space-y-1">
-        {/* Dark / Light toggle */}
-        <button
-          type="button"
-          onClick={toggle}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-ink2 hover:bg-raised hover:text-ink transition-all duration-150 text-sm"
-          aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {dark ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m8.66-9h-1M4.34 12h-1m15.07-6.07-.71.71M6.34 17.66l-.71.71M17.66 17.66l-.71-.71M6.34 6.34l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-            </svg>
-          )}
-          {dark ? "Light mode" : "Dark mode"}
-        </button>
         {actions && (
           <div className="w-full">{actions}</div>
         )}

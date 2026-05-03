@@ -4,21 +4,8 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* ── Design tokens: light mode defaults ────────────────────────────────── */
+/* ── Design tokens: dark blue / black theme (fixed) ───────────────────── */
 :root {
-  --c-page:          #ffffff;
-  --c-panel:         #f8fafc;
-  --c-card:          #f9fafb;
-  --c-raised:        #f3f4f6;
-  --c-border:        #e5e7eb;
-  --c-border-strong: #d1d5db;
-  --c-ink:           #111827;
-  --c-ink2:          #4b5563;
-  --c-ink3:          #9ca3af;
-}
-
-/* ── Design tokens: dark mode overrides ───────────────────────────────── */
-.dark {
   --c-page:          #09090f;
   --c-panel:         #0f0f1b;
   --c-card:          #111120;

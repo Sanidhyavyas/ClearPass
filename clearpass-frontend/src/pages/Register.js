@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import API from "../services/api";
-import { useTheme } from "../context/ThemeContext";
 import { getDefaultRoute, saveAuth } from "../utils/auth";
 
 const initialForm = { name: "", email: "", password: "", role: "student" };
@@ -14,7 +13,6 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { dark, toggle } = useTheme();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -73,23 +71,6 @@ function Register() {
 
       {/* Right form panel */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-[#09090f] relative">
-        {/* Theme toggle */}
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-          className="absolute top-4 right-4 p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-        >
-          {dark ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m8.66-9h-1M4.34 12h-1m15.07-6.07-.71.71M6.34 17.66l-.71.71M17.66 17.66l-.71-.71M6.34 6.34l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-            </svg>
-          )}
-        </button>
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">

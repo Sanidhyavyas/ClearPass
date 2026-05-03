@@ -393,7 +393,7 @@ const getStudentsForSubject = async (req, res, next) => {
       [subjectId]
     );
 
-    // LEFT JOIN so a student shows up even if no subject_approval row exists yet
+    // LEFT JOIN so ALL students show up, even those without a TGC or approval yet
     const { rows: students } = await db.query(
       `SELECT
          u.id            AS student_id,
@@ -407,9 +407,8 @@ const getStudentsForSubject = async (req, res, next) => {
          sa.remarks      AS approval_remarks,
          sa.mini_project_status
        FROM users u
-       JOIN term_grant_certificates tgc ON tgc.student_id = u.id
        LEFT JOIN subject_approvals sa
-         ON sa.certificate_id = tgc.id AND sa.subject_id = $1
+         ON sa.student_id = u.id AND sa.subject_id = $1
        WHERE u.role = 'student'
        ORDER BY u.roll_number NULLS LAST, u.name`,
       [subjectId]

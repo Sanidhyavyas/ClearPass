@@ -1,66 +1,63 @@
 /* All styles handled by Tailwind CSS utility classes */
 
 /* ──────────────────────────────────────────────────────
-   Dark-mode global overrides
-   Uses .dark on <html> (higher specificity than single class)
+   Global dark-blue/black theme overrides
    ────────────────────────────────────────────────────── */
 
 /* Base */
-.dark body {
-  background-color: #0f172a;
+body {
+  background-color: #09090f;
   color: #e2e8f0;
 }
 
 /* ── Backgrounds ── */
-.dark .bg-white          { background-color: #1e293b; }
-.dark .bg-slate-50       { background-color: #0f172a; }
-.dark .bg-slate-100      { background-color: #1e293b; }
-.dark .bg-slate-200      { background-color: #334155; }
+.bg-white          { background-color: #111120; }
+.bg-slate-50       { background-color: #09090f; }
+.bg-slate-100      { background-color: #111120; }
+.bg-slate-200      { background-color: #1a1a2e; }
 
 /* ── Text ── */
-.dark .text-slate-900    { color: #f1f5f9; }
-.dark .text-slate-800    { color: #e2e8f0; }
-.dark .text-slate-700    { color: #cbd5e1; }
-.dark .text-slate-600    { color: #94a3b8; }
-.dark .text-slate-500    { color: #64748b; }
+.text-slate-900    { color: #f1f5f9; }
+.text-slate-800    { color: #e2e8f0; }
+.text-slate-700    { color: #cbd5e1; }
+.text-slate-600    { color: #94a3b8; }
+.text-slate-500    { color: #64748b; }
 
 /* ── Borders ── */
-.dark .border-slate-100  { border-color: #1e293b; }
-.dark .border-slate-200  { border-color: #334155; }
-.dark .border-slate-300  { border-color: #475569; }
+.border-slate-100  { border-color: #1e1e35; }
+.border-slate-200  { border-color: #252550; }
+.border-slate-300  { border-color: #334155; }
 
 /* ── Hover states ── */
-.dark .hover\:bg-slate-50:hover  { background-color: #1e293b; }
-.dark .hover\:bg-slate-100:hover { background-color: #334155; }
-.dark .hover\:bg-slate-200:hover { background-color: #475569; }
-.dark .hover\:text-slate-700:hover { color: #cbd5e1; }
-.dark .hover\:text-slate-900:hover { color: #f1f5f9; }
+.hover\:bg-slate-50:hover  { background-color: #111120; }
+.hover\:bg-slate-100:hover { background-color: #1a1a2e; }
+.hover\:bg-slate-200:hover { background-color: #252550; }
+.hover\:text-slate-700:hover { color: #cbd5e1; }
+.hover\:text-slate-900:hover { color: #f1f5f9; }
 
-/* ── Form inputs (override inline bg-white / border-slate-300) ── */
-.dark input:not([type="checkbox"]):not([type="radio"]),
-.dark select,
-.dark textarea {
-  background-color: #1e293b;
+/* ── Form inputs ── */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  background-color: #111120;
   color: #f1f5f9;
-  border-color: #475569;
+  border-color: #1e1e35;
 }
 
-.dark input:not([type="checkbox"]):not([type="radio"])::placeholder,
-.dark textarea::placeholder {
+input:not([type="checkbox"]):not([type="radio"])::placeholder,
+textarea::placeholder {
   color: #64748b;
 }
 
 /* ── Dividers & misc ── */
-.dark .divide-slate-200 > * + * { border-color: #334155; }
+.divide-slate-200 > * + * { border-color: #1e1e35; }
 
 /* ── Modals / cards ── */
-.dark .bg-white\/5  { background-color: rgba(255, 255, 255, 0.05); }
+.bg-white\/5  { background-color: rgba(255, 255, 255, 0.05); }
 
-/* ── Focus rings already look fine; no override needed ── */
-
-/* ── Scrollbar (Webkit) in dark mode ── */
-.dark ::-webkit-scrollbar { width: 6px; height: 6px; }
-.dark ::-webkit-scrollbar-track { background: #0f172a; }
-.dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
+/* ── Scrollbar (Webkit) ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #09090f; }
+::-webkit-scrollbar-thumb { background: #1e1e35; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #252550; }
 
