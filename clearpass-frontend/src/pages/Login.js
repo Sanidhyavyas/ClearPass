@@ -47,7 +47,7 @@ function Login() {
       setLoading(true);
       setError("");
       clearAuth();
-      const res = await API.post("/login", { email: form.email, password: form.password });
+      const res = await API.post("/login", { email: form.email.trim(), password: form.password });
       saveAuth(res.data);
       navigate(getDefaultRoute(res.data.user?.role || res.data.role));
     } catch (err) {

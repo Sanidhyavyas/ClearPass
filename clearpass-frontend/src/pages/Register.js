@@ -24,7 +24,7 @@ function Register() {
     try {
       setLoading(true);
       setError("");
-      const res = await API.post("/register", form);
+      const res = await API.post("/register", { ...form, name: form.name.trim(), email: form.email.trim() });
       saveAuth(res.data);
       navigate(getDefaultRoute(res.data.user?.role || form.role));
     } catch (err) {
