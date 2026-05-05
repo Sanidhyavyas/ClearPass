@@ -1,6 +1,7 @@
 // StudentDashboard.js — Refined: clearance status, modules, history timeline
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import ClearanceProgressTracker from "../components/ClearanceProgressTracker";
 import DashboardLayout from "../components/DashboardLayout";
 import SemesterBadge from "../components/SemesterBadge";
 import { useToast } from "../context/ToastContext";
@@ -29,6 +30,7 @@ const TIMELINE_DOT = {
 };
 
 const navItems = [
+  { key: "progress",    label: "Progress",    caption: "Clearance tracker"       },
   { key: "term-grant",  label: "Term Grant",  caption: "Certificate status"     },
   { key: "assignments", label: "Assignments", caption: "Your assignments"        },
   { key: "documents",   label: "Documents",   caption: "Upload supporting files" },
@@ -76,7 +78,7 @@ function ModuleCard({ mod }) {
 export default function StudentDashboard() {
   const { addToast } = useToast();
 
-  const [activeKey, setActiveKey] = useState("term-grant"); // CHANGED: default to TGC tab
+  const [activeKey, setActiveKey] = useState("progress"); // default to Progress tracker
   const [loading, setLoading]     = useState(true);
   const [status, setStatus]       = useState(null);
   const [history, setHistory]     = useState([]);
@@ -322,6 +324,11 @@ export default function StudentDashboard() {
         </div>
       ) : (
         <>
+          {/* ── CLEARANCE PROGRESS TRACKER ─────────────────────────── */}
+          {activeKey === "progress" && (
+            <ClearanceProgressTracker status={status} history={history} />
+          )}
+
           {/* ── TERM GRANT CERTIFICATE ─────────────────────────────── */}
           {activeKey === "term-grant" && (
             <div className="space-y-5">
