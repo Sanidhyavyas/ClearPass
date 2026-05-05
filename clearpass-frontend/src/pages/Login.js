@@ -26,7 +26,7 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => { clearAuth(); }, []);
+  useEffect(() => { clearAuth(); document.title = "Sign In – ClearPass"; return () => { document.title = "ClearPass"; }; }, []);
 
   const getLoginErrorMessage = (err) => {
     const message = err.response?.data?.message || "";

@@ -1,5 +1,5 @@
 // --- REGISTER PAGE ---
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import API from "../services/api";
@@ -13,6 +13,8 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => { document.title = "Register – ClearPass"; return () => { document.title = "ClearPass"; }; }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
