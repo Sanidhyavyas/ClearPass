@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import API from "../services/api";
 import { clearAuth, getDefaultRoute, saveAuth } from "../utils/auth";
 
-const initialForm = { accountType: "user", email: "", password: "" };
+const initialForm = { email: "", password: "" };
 
 function FormField({ label, id, error, children }) {
   return (
@@ -47,8 +47,7 @@ function Login() {
       setLoading(true);
       setError("");
       clearAuth();
-      const endpoint = form.accountType === "super_admin" ? "/super-admin/login" : "/login";
-      const res = await API.post(endpoint, { email: form.email, password: form.password });
+      const res = await API.post("/login", { email: form.email, password: form.password });
       saveAuth(res.data);
       navigate(getDefaultRoute(res.data.user?.role || res.data.role));
     } catch (err) {
@@ -90,19 +89,6 @@ function Login() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            <FormField label="Account type" id="accountType">
-              <select
-                id="accountType"
-                name="accountType"
-                value={form.accountType}
-                onChange={handleChange}
-                className={`${inputClass} !text-black`}
-              >
-                <option value="user">Student / Teacher / Admin</option>
-                <option value="super_admin">Super Admin</option>
-              </select>
-            </FormField>
-
             <FormField label="Email address" id="email">
               <input
                 id="email"
