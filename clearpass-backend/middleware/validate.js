@@ -31,7 +31,7 @@ function validate(schema) {
 
 // ── Reusable field definitions ───────────────────────────────────────────────
 const fields = {
-  email:    Joi.string().email().max(255).required(),
+  email:    Joi.string().email().lowercase().trim().max(255).required(),
   password: Joi.string().min(6).max(128).required(),
   name:     Joi.string().trim().min(2).max(100).required(),
   role:     Joi.string().valid("student", "teacher", "admin").required(),
