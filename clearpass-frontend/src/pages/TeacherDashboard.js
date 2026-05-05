@@ -119,7 +119,7 @@ function FilterBar({ search, onSearchChange, semester, onSemesterChange, year, o
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search by name or roll number…"
-          className="w-full pl-9 pr-4 py-2 text-sm border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          className="w-full pl-9 pr-4 py-2 text-sm border border-[#1e1e35] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-[#111120] text-white placeholder-gray-500"
         />
       </div>
 
