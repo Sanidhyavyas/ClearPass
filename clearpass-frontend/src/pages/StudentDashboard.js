@@ -103,8 +103,10 @@ export default function StudentDashboard() {
     try {
       const res = await API.get("/api/student/profile");
       setProfile(res.data.data);
-    } catch { /* silent */ }
-  }, []);
+    } catch (err) {
+      addToast(err.response?.data?.message || "Failed to load profile.", "error");
+    }
+  }, [addToast]);
 
   // ADDED: load TGC certificate status
   const loadTGC = useCallback(async () => {
@@ -112,10 +114,12 @@ export default function StudentDashboard() {
       setTgcLoading(true);
       const res = await API.get("/api/certificate/my-status");
       setTgcData(res.data);
-    } catch { /* silent */ } finally {
+    } catch (err) {
+      addToast(err.response?.data?.message || "Failed to load certificate status.", "error");
+    } finally {
       setTgcLoading(false);
     }
-  }, []);
+  }, [addToast]);
 
   const loadStatus = useCallback(async () => {
     try {
