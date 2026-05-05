@@ -1,5 +1,19 @@
 const db = require("../db");
 const { createAuditLog } = require("./auditController");
+const { sendNotification } = require("./notificationController");
+const {
+  sendClearanceSubmitted,
+  sendTeacherAssigned,
+  sendTeacherNewRequest,
+  sendFeeStatusUpdate,
+  sendModuleStatusUpdate,
+} = require("../utils/mailer");
+const {
+  sendClearanceSubmittedSMS,
+  sendStatusUpdateSMS,
+  sendTeacherAssignedSMS,
+  sendFeeStatusSMS,
+} = require("../utils/sms");
 
 const VALID_STATUSES = ["pending", "approved", "rejected"];
 
@@ -48,7 +62,19 @@ const createClearanceRequest = async (req, res, next) => {
       [newId]
     );
 
-    return res.status(201).json({ message: "Clearance request submitted successfully", request: requests[0] });
+    const student = { name: requests[0].student_name, email: requests[0].student_email };
+    res.status(201).json({ message: "Clearance request submitted successfully", request: requests[0] });
+
+    // Fire-and-forget notifications (non-blocking)
+    sendNotification({
+      userId:  studentId,
+      type:    "info",
+      title:   "Clearance Request Submitted",
+      message: "Your clearance request has been submitted and is pending review.",
+    }).catch(() => {});
+    sendClearanceSubmitted(student).catch(() => {});
+    sendClearanceSubmittedSMS(student).catch(() => {});
+    return;
   } catch (error) {
     return next(error);
   }
@@ -145,7 +171,29 @@ const updateRequestStatus = async (req, res, next) => {
       details:    `Request #${requestId} ${status} by ${req.user.name}. Remarks: ${remarks ? remarks.trim() : "none"}`,
     });
 
-    return res.json({ message: `Request ${status} successfully` });
+    const { rows: studentRows } = await db.query(
+      `SELECT u.id, u.name, u.email, u.phone
+       FROM clearance_requests cr
+       INNER JOIN users u ON u.id = cr.student_id
+       WHERE cr.id = $1 LIMIT 1`,
+      [requestId]
+    );
+
+    res.json({ message: `Request ${status} successfully` });
+
+    // Fire-and-forget notifications (non-blocking)
+    if (studentRows.length) {
+      const student = studentRows[0];
+      sendNotification({
+        userId:  student.id,
+        type:    status === "approved" ? "success" : "error",
+        title:   `Clearance Request ${status === "approved" ? "Approved" : "Rejected"}`,
+        message: `Your clearance request #${requestId} has been ${status}.${remarks ? ` Remarks: ${remarks.trim()}` : ""}`,
+      }).catch(() => {});
+      sendModuleStatusUpdate(student, request.department, status, remarks).catch(() => {});
+      sendStatusUpdateSMS(student, status).catch(() => {});
+    }
+    return;
   } catch (error) {
     return next(error);
   }
@@ -231,7 +279,26 @@ const updateFeeStatus = async (req, res, next) => {
       [status === "approved", rows[0].student_id]
     );
 
-    return res.json({ message: `Fee payment ${status} successfully` });
+    const { rows: studentRows } = await db.query(
+      "SELECT id, name, email, phone FROM users WHERE id = $1 LIMIT 1",
+      [rows[0].student_id]
+    );
+
+    res.json({ message: `Fee payment ${status} successfully` });
+
+    // Fire-and-forget notifications (non-blocking)
+    if (studentRows.length) {
+      const student = studentRows[0];
+      sendNotification({
+        userId:  student.id,
+        type:    status === "approved" ? "success" : "warning",
+        title:   `Fee Payment ${status === "approved" ? "Verified" : "Rejected"}`,
+        message: `Your fee payment has been ${status} by admin.${remarks ? ` Remarks: ${remarks.trim()}` : ""}`,
+      }).catch(() => {});
+      sendFeeStatusUpdate(student, status, remarks).catch(() => {});
+      sendFeeStatusSMS(student, status).catch(() => {});
+    }
+    return;
   } catch (error) {
     return next(error);
   }
@@ -287,7 +354,44 @@ const assignTeacher = async (req, res, next) => {
       details:    `Request #${requestId} assigned to teacher ID ${assignedTeacherId} by ${req.user.name}`,
     });
 
-    return res.json({ message: "Teacher assigned successfully" });
+    // Look up student and teacher details for notifications
+    const { rows: reqRows } = await db.query(
+      `SELECT u.id AS student_id, u.name AS student_name, u.email AS student_email, u.phone AS student_phone
+       FROM clearance_requests cr
+       INNER JOIN users u ON u.id = cr.student_id
+       WHERE cr.id = $1 LIMIT 1`,
+      [requestId]
+    );
+    const { rows: teacherRows } = await db.query(
+      "SELECT id, name, email, phone FROM users WHERE id = $1 LIMIT 1",
+      [assignedTeacherId]
+    );
+
+    res.json({ message: "Teacher assigned successfully" });
+
+    // Fire-and-forget notifications (non-blocking)
+    if (reqRows.length) {
+      const student = { id: reqRows[0].student_id, name: reqRows[0].student_name, email: reqRows[0].student_email, phone: reqRows[0].student_phone };
+      const teacher = teacherRows[0] || {};
+      sendNotification({
+        userId:  student.id,
+        type:    "info",
+        title:   "Reviewer Assigned",
+        message: `A reviewer (${teacher.name || "an admin"}) has been assigned to your clearance request.`,
+      }).catch(() => {});
+      if (teacher.id) {
+        sendNotification({
+          userId:  teacher.id,
+          type:    "info",
+          title:   "New Clearance Request Assigned",
+          message: `Request #${requestId} from ${student.name} has been assigned to you for review.`,
+        }).catch(() => {});
+      }
+      sendTeacherAssigned(student, teacher.name || "a reviewer").catch(() => {});
+      if (teacher.email) sendTeacherNewRequest(teacher, student.name, requestId).catch(() => {});
+      sendTeacherAssignedSMS(student, teacher.name || "a reviewer").catch(() => {});
+    }
+    return;
   } catch (error) {
     return next(error);
   }

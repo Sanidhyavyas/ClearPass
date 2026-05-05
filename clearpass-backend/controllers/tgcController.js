@@ -15,6 +15,9 @@ const fs   = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
 const db   = require("../db");
+const { sendNotification } = require("./notificationController");
+const { sendTGCSubjectUpdate } = require("../utils/mailer");
+const { sendTGCSubjectSMS } = require("../utils/sms");
 
 // ── Certificate upload directory ─────────────────────────────────────────
 const CERT_DIR = path.join(__dirname, "..", "uploads", "certificates");
@@ -611,15 +614,36 @@ const approveStudentSubject = async (req, res, next) => {
       );
     }
 
-    return res.json({ message: `Subject ${status}`, approval: updated });
+    // Look up student and subject name for notifications
+    const { rows: studentRows } = await db.query(
+      "SELECT id, name, email, phone FROM users WHERE id = $1 LIMIT 1",
+      [studentId]
+    );
+    const { rows: subjectRows } = await db.query(
+      "SELECT name FROM subjects WHERE id = $1 LIMIT 1",
+      [subjectId]
+    );
+
+    res.json({ message: `Subject ${status}`, approval: updated });
+
+    // Fire-and-forget notifications (non-blocking)
+    if (studentRows.length) {
+      const student     = studentRows[0];
+      const subjectName = subjectRows[0]?.name || `Subject #${subjectId}`;
+      sendNotification({
+        userId:  student.id,
+        type:    status === "approved" ? "success" : status === "rejected" ? "error" : "info",
+        title:   `TGC Subject ${status === "approved" ? "Approved" : status === "rejected" ? "Rejected" : "Updated"}`,
+        message: `Your TGC subject "${subjectName}" has been ${status}.${remarks ? ` Remarks: ${remarks}` : ""}`,
+      }).catch(() => {});
+      sendTGCSubjectUpdate(student, subjectName, status, remarks).catch(() => {});
+      sendTGCSubjectSMS(student, subjectName, status).catch(() => {});
+    }
+    return;
   } catch (err) {
     return next(err);
   }
 };
-
-// ══════════════════════════════════════════════════════════════════════════
-// PART 2D — Term Grant Certificate (Student)
-// ══════════════════════════════════════════════════════════════════════════
 
 /**
  * POST /api/certificate/request
