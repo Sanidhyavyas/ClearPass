@@ -148,6 +148,7 @@ export default function NotificationBell({ className = "" }) {
             {unread > 0 && (
               <button
                 onClick={markAllRead}
+                aria-label="Mark all notifications as read"
                 className="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-medium"
               >
                 Mark all read
