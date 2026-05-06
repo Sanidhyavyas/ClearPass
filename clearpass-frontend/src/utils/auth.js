@@ -47,6 +47,10 @@ export function getToken() {
   return getAuth()?.token || "";
 }
 
+export function isAuthenticated() {
+  return Boolean(getToken());
+}
+
 export function getRole(explicitRole) {
   if (explicitRole) {
     return explicitRole;
