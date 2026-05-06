@@ -14,6 +14,11 @@ function SettingsPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
 
+  useEffect(() => {
+    document.title = "Settings – ClearPass";
+    return () => { document.title = "ClearPass"; };
+  }, []);
+
   // Notification toggles
   const [notifications, setNotifications] = useState({ emailUpdates: true, requestApproval: true, requestRejection: true, weeklyDigest: false });
 

@@ -28,6 +28,11 @@ function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
 
+  useEffect(() => {
+    document.title = "Profile – ClearPass";
+    return () => { document.title = "ClearPass"; };
+  }, []);
+
   const loadProfile = async () => {
     try {
       setLoading(true);
