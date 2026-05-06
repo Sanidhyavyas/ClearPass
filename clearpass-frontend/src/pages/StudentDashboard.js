@@ -22,8 +22,8 @@ const STATUS_STYLE = {
 };
 
 const TIMELINE_DOT = {
-  approved:          "bg-green-500/150",
-  rejected:          "bg-red-500/150",
+  approved:          "bg-green-500",
+  rejected:          "bg-red-500",
   changes_requested: "bg-amber-500",
   submitted:         "bg-blue-500",
   resubmitted:       "bg-blue-400",
@@ -404,8 +404,8 @@ export default function StudentDashboard() {
                     const appr  = tgcData.approved_count || 0;
                     const pct   = total > 0 ? Math.round((appr / total) * 100) : 0;
                     const statusCfg = {
-                      approved: { bg: "bg-green-500/15 border-green-200", bar: "bg-green-500/150",  pill: "bg-green-100 text-green-800",  label: "All Approved ✓" },
-                      rejected: { bg: "bg-red-500/15 border-red-200",     bar: "bg-red-500/150",    pill: "bg-red-100 text-red-700",      label: "Rejected" },
+                      approved: { bg: "bg-green-500/15 border-green-200", bar: "bg-green-500",  pill: "bg-green-100 text-green-800",  label: "All Approved ✓" },
+                      rejected: { bg: "bg-red-500/15 border-red-200",     bar: "bg-red-500",    pill: "bg-red-100 text-red-700",      label: "Rejected" },
                       pending:  { bg: "bg-amber-50 border-amber-200", bar: "bg-blue-500",   pill: "bg-amber-100 text-amber-800",  label: "In Progress" },
                     };
                     const cfg = statusCfg[cert.overall_status] || statusCfg.pending;

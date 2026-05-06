@@ -27,7 +27,7 @@ function StatCard({ label, sub, value, iconPath, colorClass, pulseDot }) {
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorClass}`}>
           {pulseDot ? (
             <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500/150 opacity-75" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500/40 opacity-75" />
               <span className="relative inline-flex h-3 w-3 rounded-full bg-red-600" />
             </span>
           ) : (
@@ -67,7 +67,7 @@ function NotificationsBell({ count, notifications, open, onToggle, onMarkAllRead
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         {count > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500/150 text-white text-[10px] font-bold rounded-full px-1">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
             {count > 9 ? "9+" : count}
           </span>
         )}
@@ -1036,7 +1036,7 @@ function TeacherDashboard() {
                                 </div>
                                 <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                                   <div
-                                    className={`h-full rounded-full transition-all ${pct === 100 ? "bg-green-500/150" : "bg-blue-500"}`}
+                                    className={`h-full rounded-full transition-all ${pct === 100 ? "bg-green-500" : "bg-blue-500"}`}
                                     style={{ width: `${pct}%` }}
                                   />
                                 </div>
@@ -1081,7 +1081,7 @@ function TeacherDashboard() {
                                           title={`Toggle: ${ci.item_name}`}
                                           onClick={() => handleToggleProgress(stu.student_id, ci.checklist_item_id, selectedSubject.id, ci.status)}
                                           className={`shrink-0 w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold transition-colors ${
-                                            ci.status === "completed" ? "bg-green-500/150 text-white"
+                                            ci.status === "completed" ? "bg-green-500 text-white"
                                             : ci.status === "waived"  ? "bg-gray-300 text-slate-400"
                                             : "bg-gray-200 text-gray-400 hover:bg-blue-100"
                                           }`}

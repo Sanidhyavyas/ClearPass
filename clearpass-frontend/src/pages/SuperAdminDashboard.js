@@ -801,7 +801,7 @@ function SuperAdminDashboard() {
                                   <p className="text-sm font-medium text-slate-200 truncate">{s.subject_name}</p>
                                   <div className="flex items-center gap-2 mt-1">
                                     <div className="flex-1 h-1.5 bg-[#1a1a2e] rounded-full overflow-hidden max-w-[200px]">
-                                      <div className="h-full bg-green-500/150 rounded-full" style={{ width: `${pct}%` }} />
+                                      <div className="h-full bg-green-500 rounded-full" style={{ width: `${pct}%` }} />
                                     </div>
                                     <span className="text-xs text-slate-400 shrink-0">{s.approved}/{s.total} ({pct}%)</span>
                                   </div>
