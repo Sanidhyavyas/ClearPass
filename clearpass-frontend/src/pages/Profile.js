@@ -53,7 +53,7 @@ function ProfilePage() {
     if (!form.name.trim()) { addToast("Name cannot be empty.", "warning"); return; }
     try {
       setSaving(true);
-      await API.put("/profile", { name: form.name, department: form.department });
+      await API.put("/profile", { name: form.name.trim(), department: form.department.trim() });
       setUser((prev) => ({ ...prev, name: form.name, department: form.department }));
       addToast("Profile updated successfully.", "success");
     } catch (err) {
