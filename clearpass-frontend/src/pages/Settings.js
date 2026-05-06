@@ -35,7 +35,7 @@ function SettingsPage() {
     e.preventDefault();
     const errs = {};
     if (!pwForm.current)         errs.current = "Current password is required.";
-    if (pwForm.newPw.length < 6) errs.newPw   = "New password must be at least 6 characters.";
+    if (pwForm.newPw.length < 8) errs.newPw   = "New password must be at least 8 characters.";
     if (pwForm.newPw !== pwForm.confirm) errs.confirm = "Passwords do not match.";
     if (Object.keys(errs).length) { setPwErrors(errs); return; }
     try {
