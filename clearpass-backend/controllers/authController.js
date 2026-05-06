@@ -5,6 +5,7 @@ const crypto = require("crypto");
 const db = require("../db");
 
 const VALID_ROLES = ["student", "teacher", "admin"];
+const JWT_EXPIRY  = "1h";
 
 const buildAuthResponse = (user, authSource = "users") => {
   const token = jwt.sign(
@@ -15,7 +16,7 @@ const buildAuthResponse = (user, authSource = "users") => {
       authSource,
     },
     process.env.JWT_SECRET,
-    { expiresIn: "1h" }
+    { expiresIn: JWT_EXPIRY }
   );
 
   const userData = {
