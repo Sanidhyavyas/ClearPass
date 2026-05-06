@@ -116,8 +116,35 @@ const login = async (req, res, next) => {
       [normalizedEmail]
     );
 
+    // If not found in users, try super_admins table
     if (users.length === 0) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      const { rows: superAdmins } = await db.query(
+        "SELECT id, name, email, password FROM super_admins WHERE email = $1 LIMIT 1",
+        [normalizedEmail]
+      );
+
+      if (superAdmins.length === 0) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      const superAdmin = superAdmins[0];
+      const isSuperAdminPasswordValid = await bcrypt.compare(password, superAdmin.password);
+
+      if (!isSuperAdminPasswordValid) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      const token = jwt.sign(
+        { id: superAdmin.id, role: "super_admin", email: superAdmin.email, authSource: "super_admins" },
+        process.env.JWT_SECRET,
+        { expiresIn: "8h" }
+      );
+
+      return res.json({
+        message: "Authentication successful",
+        token,
+        user: { id: superAdmin.id, name: superAdmin.name, email: superAdmin.email, role: "super_admin" },
+      });
     }
 
     const user = users[0];
