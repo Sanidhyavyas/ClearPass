@@ -10,7 +10,7 @@ const initialForm = { email: "", password: "" };
 function FormField({ label, id, error, children }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+      <label htmlFor={id} className="block text-sm font-medium text-slate-300 mb-1.5">
         {label}
       </label>
       {children}
@@ -57,7 +57,7 @@ function Login() {
     }
   };
 
-  const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-gray-300 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150";
+  const inputClass = "w-full px-3.5 py-2.5 rounded-lg border border-[#252550] bg-[#1a1a2e] text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-150";
 
   return (
     <div className="min-h-screen bg-[#09090f] relative flex flex-col">
