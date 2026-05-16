@@ -7,6 +7,17 @@
 export const YEARS     = [1, 2, 3, 4];
 export const SEMESTERS = [1, 2, 3, 4, 5, 6, 7, 8];
 
+/** All valid user roles */
+export const ROLES = Object.freeze({
+  STUDENT:     "student",
+  TEACHER:     "teacher",
+  ADMIN:       "admin",
+  SUPER_ADMIN: "super_admin",
+});
+
+/** Current academic year (4-digit) */
+export const CURRENT_ACADEMIC_YEAR = new Date().getFullYear();
+
 /** Semesters that belong to a given year (e.g. year 3 → [5, 6]) */
 export const semestersForYear = (year) => {
   const base = (year - 1) * 2;
