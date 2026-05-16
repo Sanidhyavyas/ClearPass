@@ -69,7 +69,8 @@ const schemas = {
   }),
 
   updateProfile: Joi.object({
-    name: fields.name,
+    name:       fields.name,
+    department: Joi.string().trim().max(100).optional().allow("", null),
   }),
 
   createClearanceRequest: Joi.object({
