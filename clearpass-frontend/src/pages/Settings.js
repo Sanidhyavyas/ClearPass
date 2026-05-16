@@ -41,6 +41,8 @@ function SettingsPage() {
     const errs = {};
     if (!pwForm.current)         errs.current = "Current password is required.";
     if (pwForm.newPw.length < 8) errs.newPw   = "New password must be at least 8 characters.";
+    if (!/[A-Z]/.test(pwForm.newPw)) errs.newPw = errs.newPw || "New password must contain at least one uppercase letter.";
+    if (!/[0-9]/.test(pwForm.newPw)) errs.newPw = errs.newPw || "New password must contain at least one number.";
     if (pwForm.newPw !== pwForm.confirm) errs.confirm = "Passwords do not match.";
     if (Object.keys(errs).length) { setPwErrors(errs); return; }
     try {
