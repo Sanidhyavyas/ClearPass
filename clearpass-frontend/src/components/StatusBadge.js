@@ -1,9 +1,11 @@
 // --- STATUS BADGE ---
 const STATUS_STYLES = {
-  pending:  { dot: "bg-amber-400",  pill: "bg-amber-50  text-amber-700  ring-amber-200"  },
-  approved: { dot: "bg-green-500",  pill: "bg-green-50  text-green-700  ring-green-200"  },
-  rejected: { dot: "bg-red-500",    pill: "bg-red-50    text-red-700    ring-red-200"    },
-  default:  { dot: "bg-slate-400",  pill: "bg-slate-50  text-slate-700  ring-slate-200" },
+  pending:   { dot: "bg-amber-400",  pill: "bg-amber-50  text-amber-700  ring-amber-200"  },
+  approved:  { dot: "bg-green-500",  pill: "bg-green-50  text-green-700  ring-green-200"  },
+  rejected:  { dot: "bg-red-500",    pill: "bg-red-50    text-red-700    ring-red-200"    },
+  in_review: { dot: "bg-blue-400",   pill: "bg-blue-50   text-blue-700   ring-blue-200"   },
+  cleared:   { dot: "bg-teal-500",   pill: "bg-teal-50   text-teal-700   ring-teal-200"   },
+  default:   { dot: "bg-slate-400",  pill: "bg-slate-50  text-slate-700  ring-slate-200"  },
 };
 
 function StatusBadge({ status }) {
