@@ -3,8 +3,9 @@
  *
  * Rate limiting middleware using express-rate-limit.
  *
- * authLimiter  — strict: 10 requests / 15 min — applied to /api/auth
- * apiLimiter   — relaxed: 200 requests / 15 min — applied globally
+ * authLimiter   — strict: 10 requests / 15 min — applied to /api/auth
+ * apiLimiter    — relaxed: 200 requests / 15 min — applied globally
+ * uploadLimiter — restrictive: 20 requests / 15 min — applied to upload endpoints
  */
 
 const rateLimit = require("express-rate-limit");
@@ -32,4 +33,15 @@ const apiLimiter = rateLimit({
   skip: () => process.env.NODE_ENV === "test",
 });
 
-module.exports = { authLimiter, apiLimiter };
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: "Too many upload requests. Please try again after 15 minutes.",
+  },
+  skip: () => process.env.NODE_ENV === "test",
+});
+
+module.exports = { authLimiter, apiLimiter, uploadLimiter };
