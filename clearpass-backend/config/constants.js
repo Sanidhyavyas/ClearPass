@@ -30,4 +30,25 @@ const yearForSemester = (semester) => Math.ceil(semester / 2);
 const LEGACY_YEAR     = 3;
 const LEGACY_SEMESTER = 6;
 
-module.exports = { YEARS, SEMESTERS, semestersForYear, yearForSemester, LEGACY_YEAR, LEGACY_SEMESTER };
+/**
+ * All valid user roles.
+ */
+const ROLES = Object.freeze({
+  STUDENT:     "student",
+  TEACHER:     "teacher",
+  ADMIN:       "admin",
+  SUPER_ADMIN: "super_admin",
+});
+
+/**
+ * Clearance request statuses.
+ */
+const CLEARANCE_STATUS = Object.freeze({
+  PENDING:   "pending",
+  APPROVED:  "approved",
+  REJECTED:  "rejected",
+  IN_REVIEW: "in_review",
+  CLEARED:   "cleared",
+});
+
+module.exports = { YEARS, SEMESTERS, semestersForYear, yearForSemester, LEGACY_YEAR, LEGACY_SEMESTER, ROLES, CLEARANCE_STATUS };
