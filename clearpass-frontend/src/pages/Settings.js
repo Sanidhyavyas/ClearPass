@@ -1,5 +1,5 @@
 // --- SETTINGS PAGE ---
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import DashboardLayout from "../components/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
