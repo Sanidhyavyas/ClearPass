@@ -59,6 +59,15 @@ export function getRole(explicitRole) {
   return getAuth()?.user?.role || localStorage.getItem("role") || "";
 }
 
+export function isStudent()    { return getRole() === "student"; }
+export function isTeacher()    { return getRole() === "teacher"; }
+export function isAdmin()      { return getRole() === "admin"; }
+export function isSuperAdmin() { return getRole() === "super_admin"; }
+
+export function getDisplayName() {
+  return getAuth()?.user?.name || "";
+}
+
 export function getDefaultRoute(explicitRole) {
   const role = getRole(explicitRole);
 
