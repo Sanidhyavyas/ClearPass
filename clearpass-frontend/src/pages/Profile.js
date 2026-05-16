@@ -51,10 +51,13 @@ function ProfilePage() {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) { addToast("Name cannot be empty.", "warning"); return; }
+    const trimmedName       = form.name.trim();
+    const trimmedDepartment = form.department.trim();
     try {
       setSaving(true);
-      await API.put("/profile", { name: form.name.trim(), department: form.department.trim() });
-      setUser((prev) => ({ ...prev, name: form.name, department: form.department }));
+      await API.put("/profile", { name: trimmedName, department: trimmedDepartment });
+      setUser((prev) => ({ ...prev, name: trimmedName, department: trimmedDepartment }));
+      setForm((prev) => ({ ...prev, name: trimmedName, department: trimmedDepartment }));
       addToast("Profile updated successfully.", "success");
     } catch (err) {
       addToast(err.response?.data?.message || "Failed to save changes.", "error");
