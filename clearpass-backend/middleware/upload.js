@@ -2,6 +2,11 @@ const multer = require("multer");
 const path   = require("path");
 const fs     = require("fs");
 
+const UPLOAD_LIMITS = {
+  MAX_FILE_SIZE_BYTES: 5 * 1024 * 1024, // 5 MB
+  MAX_FILES_PER_REQUEST: 5,
+};
+
 // Vercel's filesystem is read-only except /tmp; use /tmp in production
 const UPLOAD_DIR = process.env.VERCEL
   ? "/tmp/uploads"
@@ -40,9 +45,9 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize:  5 * 1024 * 1024, // 5 MB per file
-    files:     5,                // max 5 files per request
+    fileSize: UPLOAD_LIMITS.MAX_FILE_SIZE_BYTES,
+    files:    UPLOAD_LIMITS.MAX_FILES_PER_REQUEST,
   },
 });
 
-module.exports = upload;
+module.exports = { upload, UPLOAD_LIMITS };
