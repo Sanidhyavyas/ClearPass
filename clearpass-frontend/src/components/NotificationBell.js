@@ -11,7 +11,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import api from "../services/api";
 
-const POLL_INTERVAL_MS = 30_000;
+const POLL_INTERVAL_MS = 60_000; // 60 s — reduces server load vs the previous 30 s
 
 const TYPE_ICONS = {
   clearance_approved:  "✅",
