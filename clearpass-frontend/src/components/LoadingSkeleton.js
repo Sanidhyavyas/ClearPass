@@ -8,6 +8,23 @@ export function SkeletonLine({ className = "" }) {
   );
 }
 
+export function SkeletonCircle({ size = "h-10 w-10" }) {
+  return (
+    <div
+      className={`animate-pulse bg-[#1e1e35] rounded-full ${size}`}
+      aria-hidden="true"
+    />
+  );
+}
+
+export function SkeletonAvatar({ size = "h-12 w-12" }) {
+  return (
+    <div className={`animate-pulse bg-[#1e1e35] rounded-full ${size} flex items-center justify-center`} aria-hidden="true">
+      <div className="h-1/2 w-1/2 bg-[#2a2a4a] rounded-full" />
+    </div>
+  );
+}
+
 export function SkeletonCard() {
   return (
     <div className="bg-[#111120] rounded-xl border border-[#1e1e35] p-5 space-y-3" aria-hidden="true">
