@@ -68,6 +68,17 @@ export function getDisplayName() {
   return getAuth()?.user?.name || "";
 }
 
+export function getInitials() {
+  const name = getDisplayName();
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 export function getDefaultRoute(explicitRole) {
   const role = getRole(explicitRole);
 
