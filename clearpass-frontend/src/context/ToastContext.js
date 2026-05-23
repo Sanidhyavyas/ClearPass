@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useState } from "react";
 
 const ToastContext = createContext(null);
 let idCounter = 0;
+const MAX_TOASTS = 5;
 
 const TOAST_STYLES = {
   success: { bar: "bg-green-500",  icon: "text-green-600", bg: "bg-white", border: "border-green-200", text: "text-green-800",   iconPath: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
@@ -16,7 +17,11 @@ export function ToastProvider({ children }) {
 
   const addToast = useCallback((message, type = "info", duration = 4500) => {
     const id = ++idCounter;
-    setToasts((prev) => [...prev, { id, message, type }]);
+    setToasts((prev) => {
+      // Evict the oldest toast if the cap is reached
+      const trimmed = prev.length >= MAX_TOASTS ? prev.slice(1) : prev;
+      return [...trimmed, { id, message, type }];
+    });
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), duration);
   }, []);
 
