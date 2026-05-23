@@ -10,6 +10,7 @@
  */
 
 const db = require("../db");
+const logger            = require("../utils/logger");
 const { createAuditLog } = require("../controllers/auditController");
 const feeService        = require("./externalServices/feeService");
 const libraryService    = require("./externalServices/libraryService");
@@ -134,7 +135,11 @@ async function persistEngineResult({ requestId, studentId, eligible, autoDecisio
       ]
     );
   } catch (err) {
-    console.error("[clearanceEngine] Failed to persist result:", err.message);
+    logger.error("[clearanceEngine] Failed to persist engine result", {
+      message:   err.message,
+      requestId,
+      studentId,
+    });
   }
 }
 
