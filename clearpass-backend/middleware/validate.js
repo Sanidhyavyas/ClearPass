@@ -79,6 +79,25 @@ const schemas = {
     semester:    fields.semester,
     remarks:     Joi.string().trim().max(500).optional().allow("", null),
   }),
+
+  changePassword: Joi.object({
+    currentPassword: Joi.string().min(1).max(128).required(),
+    newPassword:     Joi.string()
+      .min(8).max(128)
+      .pattern(/[A-Z]/, "uppercase letter")
+      .pattern(/[0-9]/, "number")
+      .required()
+      .messages({
+        "string.pattern.name": "'newPassword' must contain at least one {{#name}}",
+      }),
+  }),
+
+  updateNotificationPrefs: Joi.object({
+    emailUpdates:      Joi.boolean().optional(),
+    requestApproval:   Joi.boolean().optional(),
+    requestRejection:  Joi.boolean().optional(),
+    weeklyDigest:      Joi.boolean().optional(),
+  }),
 };
 
 module.exports = { validate, schemas };
