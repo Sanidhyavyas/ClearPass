@@ -31,16 +31,20 @@ const REMARKS = {
  * @returns {string}
  */
 function generateAutoRemarks(studentId, modules) {
-  if (!modules || modules.length === 0) {
+  if (!Array.isArray(modules) || modules.length === 0) {
     return REMARKS.noModules;
   }
 
-  const approved = modules.filter((m) => m.status === "approved");
-  const rejected = modules.filter((m) => m.status === "rejected");
-  const pending  = modules.filter((m) => m.status === "pending");
+  // Filter out any null/undefined entries before processing.
+  const valid = modules.filter((m) => m != null);
+  if (valid.length === 0) return REMARKS.noModules;
+
+  const approved = valid.filter((m) => m.status === "approved");
+  const rejected = valid.filter((m) => m.status === "rejected");
+  const pending  = valid.filter((m) => m.status === "pending");
 
   if (rejected.length > 0) {
-    const names = rejected.map((m) => m.module_name || m.name).join(", ");
+    const names = rejected.map((m) => m.module_name || m.name || "Unknown Module").join(", ");
     return REMARKS.rejected(names);
   }
 
@@ -48,10 +52,10 @@ function generateAutoRemarks(studentId, modules) {
     return REMARKS.allApproved;
   }
 
-  const pct = Math.round((approved.length / modules.length) * 100);
+  const pct = Math.round((approved.length / valid.length) * 100);
 
   if (pending.length === 1) {
-    return REMARKS.pendingOne(pending[0].module_name || pending[0].name);
+    return REMARKS.pendingOne(pending[0].module_name || pending[0].name || "a module");
   }
 
   if (pct >= 75) {
