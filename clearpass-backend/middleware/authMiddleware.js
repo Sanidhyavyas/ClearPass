@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 
-const db = require("../db");
+const db     = require("../db");
+const logger = require("../utils/logger");
 
 const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -91,9 +92,13 @@ const authorizeRoles = (...roles) => (req, res, next) => {
   }
 
   if (!roles.includes(req.user.role)) {
-    console.warn(
-      `[authorizeRoles] DENIED — user ${req.user.id} has role="${req.user.role}", required: [${roles.join(", ")}] — ${req.method} ${req.originalUrl}`
-    );
+    logger.warn("[authorizeRoles] Access denied", {
+      userId:   req.user.id,
+      role:     req.user.role,
+      required: roles,
+      method:   req.method,
+      url:      req.originalUrl,
+    });
     return res.status(403).json({
       message: "Forbidden: insufficient permissions"
     });
