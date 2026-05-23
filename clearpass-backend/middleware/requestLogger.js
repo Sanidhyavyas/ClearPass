@@ -47,7 +47,13 @@ function requestLogger(req, res, next) {
   const getUserId = () => req.user?.id || req.user?.email || null;
 
   // ── 3. Log incoming request ────────────────────────────────────────
-  const startTime = Date.now();
+  const startTime    = Date.now();
+  const contentType  = req.headers["content-type"] || "";
+  // Skip body logging for multipart uploads — it contains binary data and
+  // is not useful in text logs. Sensitive fields in JSON bodies are scrubbed
+  // by the logger's own scrubFormat transform (passwords, tokens, etc.)
+  const isMultipart  = contentType.includes("multipart/form-data");
+  const logBody      = req.method !== "GET" && !isMultipart ? req.body : undefined;
 
   logger.info("Incoming request", {
     requestId,
@@ -55,9 +61,7 @@ function requestLogger(req, res, next) {
     route:   req.originalUrl,
     query:   req.query,
     headers: sanitizeHeaders(req.headers),
-    // Body logged only for non-GET; sensitive fields are scrubbed by the
-    // logger's own scrubFormat transform (passwords, tokens, etc.)
-    body:    req.method !== "GET" ? req.body : undefined,
+    body:    logBody,
   });
 
   // ── 4. Log response on finish ──────────────────────────────────────
