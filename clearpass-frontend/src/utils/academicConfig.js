@@ -15,6 +15,18 @@ export const ROLES = Object.freeze({
   SUPER_ADMIN: "super_admin",
 });
 
+/**
+ * Clearance request statuses — mirrors the backend CLEARANCE_STATUS constant.
+ * Import from here so the frontend and backend stay in sync.
+ */
+export const CLEARANCE_STATUS = Object.freeze({
+  PENDING:   "pending",
+  APPROVED:  "approved",
+  REJECTED:  "rejected",
+  IN_REVIEW: "in_review",
+  CLEARED:   "cleared",
+});
+
 /** Current academic year (4-digit) */
 export const CURRENT_ACADEMIC_YEAR = new Date().getFullYear();
 
