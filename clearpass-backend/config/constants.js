@@ -51,4 +51,11 @@ const CLEARANCE_STATUS = Object.freeze({
   CLEARED:   "cleared",
 });
 
-module.exports = { YEARS, SEMESTERS, semestersForYear, yearForSemester, LEGACY_YEAR, LEGACY_SEMESTER, ROLES, CLEARANCE_STATUS };
+/**
+ * Authentication constants.
+ * Import from here instead of hardcoding values in controllers.
+ */
+const JWT_EXPIRY    = process.env.JWT_EXPIRY    || "1h";   // access token lifetime
+const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || "10", 10); // salt rounds
+
+module.exports = { YEARS, SEMESTERS, semestersForYear, yearForSemester, LEGACY_YEAR, LEGACY_SEMESTER, ROLES, CLEARANCE_STATUS, JWT_EXPIRY, BCRYPT_ROUNDS };
