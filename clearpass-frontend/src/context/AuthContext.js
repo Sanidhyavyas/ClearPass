@@ -17,8 +17,22 @@ export function AuthProvider({ children }) {
     setAuth(null);
   };
 
+  /**
+   * Merge partial user field updates into the current auth state.
+   * Used by the Profile page after a successful name/department edit
+   * so the header and other consumers reflect the change immediately.
+   */
+  const updateUser = (updates) => {
+    setAuth((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, user: { ...prev.user, ...updates } };
+      saveAuth(next);
+      return next;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ auth, user: auth?.user || null, login, logout }}>
+    <AuthContext.Provider value={{ auth, user: auth?.user || null, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
