@@ -11,7 +11,8 @@
  *   DELETE /api/notifications/:id     — delete one notification
  */
 
-const db = require("../db");
+const db     = require("../db");
+const logger = require("../utils/logger");
 
 // ── Send a notification to a user ──────────────────────────────────────────
 /**
@@ -33,7 +34,7 @@ async function sendNotification({ userId, type, title, message, meta = null }) {
       [userId, type, title, message, meta ? JSON.stringify(meta) : null]
     );
   } catch (err) {
-    console.error("[notifications] Failed to insert notification:", err.message);
+    logger.error("[notifications] Failed to insert notification", { message: err.message, userId, type });
   }
 }
 
