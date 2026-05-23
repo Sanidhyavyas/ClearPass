@@ -3,9 +3,9 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
 const db = require("../db");
+const { JWT_EXPIRY, BCRYPT_ROUNDS } = require("../config/constants");
 
 const VALID_ROLES = ["student", "teacher", "admin"];
-const JWT_EXPIRY  = "1h";
 
 const buildAuthResponse = (user, authSource = "users") => {
   const token = jwt.sign(
@@ -86,7 +86,7 @@ const register = async (req, res, next) => {
     const studentYear     = year     != null ? parseInt(year,     10) : 3;
     const studentSemester = semester != null ? parseInt(semester, 10) : 6;
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const { rows: inserted } = await db.query(
       `INSERT INTO users (name, email, password, role, year, semester)
        VALUES ($1, $2, $3, $4, $5, $6)
@@ -302,7 +302,7 @@ const createUser = async (req, res, next) => {
         .json({ message: "User with this email already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const { rows: inserted } = await connection.query(
       `INSERT INTO users (name, email, password, role, department, year, semester)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -443,7 +443,7 @@ const updateUser = async (req, res, next) => {
     }
 
     if (password) {
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
       await db.query(
         `UPDATE users SET name = $1, email = $2, password = $3, role = $4, department = $5 WHERE id = $6`,
         [
