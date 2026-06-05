@@ -92,6 +92,15 @@ const schemas = {
       }),
   }),
 
+  // Used when a student submits their own clearance request (student_id comes from JWT)
+  submitClearanceRequest: Joi.object({
+    year:        fields.year.optional(),
+    semester:    fields.semester.optional(),
+    roll_number: Joi.string().trim().max(50).optional().allow("", null),
+    department:  Joi.string().trim().max(100).optional().allow("", null),
+    remarks:     Joi.string().trim().max(500).optional().allow("", null),
+  }),
+
   updateNotificationPrefs: Joi.object({
     emailUpdates:      Joi.boolean().optional(),
     requestApproval:   Joi.boolean().optional(),
