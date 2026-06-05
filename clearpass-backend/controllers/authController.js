@@ -605,7 +605,47 @@ const logout = async (req, res, next) => {
   }
 };
 
+/**
+ * POST /api/auth/change-password
+ * Authenticated user changes their own password.
+ * Body: { currentPassword, newPassword }
+ */
+const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    const { rows: users } = await db.query(
+      "SELECT id, password FROM users WHERE id = $1 LIMIT 1",
+      [userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isCurrentValid = await bcrypt.compare(currentPassword, users[0].password);
+    if (!isCurrentValid) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    await db.query("UPDATE users SET password = $1 WHERE id = $2", [hashedPassword, userId]);
+
+    // Revoke all refresh tokens so existing sessions are invalidated
+    await db.query(
+      "UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = $1",
+      [userId]
+    ).catch(() => {});
+
+    return res.json({ message: "Password changed successfully" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
+  changePassword,
   createUser,
   deleteUser,
   getAllUsers,

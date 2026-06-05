@@ -1,17 +1,18 @@
 const express = require("express");
 
 const {
+  changePassword,
   getAllUsers,
-  getStudents,   // ADDED
-  getTeachers,   // ADDED
-  getAdmins,     // ADDED
+  getStudents,
+  getTeachers,
+  getAdmins,
   getCurrentUser,
   login,
   logout,
   refreshToken,
   register,
   updateProfile,
-  createUser,    // ADDED
+  createUser,
   updateUser,
   deleteUser
 } = require("../controllers/authController");
@@ -26,6 +27,7 @@ router.post("/logout",   logout);
 router.post("/refresh",  validate(schemas.refreshToken), refreshToken);
 router.get("/me", verifyToken, getCurrentUser);
 router.put("/profile", verifyToken, validate(schemas.updateProfile), updateProfile);
+router.post("/change-password", verifyToken, validate(schemas.changePassword), changePassword);
 router.get("/users", verifyToken, authorizeRoles("admin"), getAllUsers);
 
 // ADDED: Admin user management routes
