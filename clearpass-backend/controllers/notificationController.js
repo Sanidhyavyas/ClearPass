@@ -113,10 +113,23 @@ const deleteNotification = async (req, res, next) => {
   }
 };
 
+const getUnreadCount = async (req, res, next) => {
+  try {
+    const { rows } = await db.query(
+      "SELECT COUNT(*) AS unread FROM notifications WHERE user_id = $1 AND is_read = FALSE",
+      [req.user.id]
+    );
+    return res.json({ unread: parseInt(rows[0].unread, 10) });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   sendNotification,
   sendNotificationBatch,
   getNotifications,
+  getUnreadCount,
   markAllRead,
   markOneRead,
   deleteNotification,
