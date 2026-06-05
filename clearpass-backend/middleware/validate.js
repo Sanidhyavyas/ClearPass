@@ -120,6 +120,11 @@ const schemas = {
   requestChanges: Joi.object({
     remarks: Joi.string().trim().min(5).max(500).required(),
   }),
+
+  updateAcademicInfo: Joi.object({
+    year:     fields.year.required(),
+    semester: fields.semester.required(),
+  }),
 };
 
 module.exports = { validate, schemas };

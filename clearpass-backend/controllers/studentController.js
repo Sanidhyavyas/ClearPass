@@ -150,4 +150,29 @@ const getProfile = async (req, res, next) => {
   }
 };
 
-module.exports = { getClearanceStatus, getClearanceHistory, getClearanceModules, getProfile };
+/**
+ * PUT /api/student/academic-info
+ * Lets the authenticated student update their own year and/or semester.
+ */
+const updateAcademicInfo = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { year, semester } = req.body;
+
+    await db.query(
+      "UPDATE users SET year = $1, semester = $2 WHERE id = $3",
+      [year, semester, userId]
+    );
+
+    const { rows } = await db.query(
+      "SELECT id, name, email, year, semester FROM users WHERE id = $1 LIMIT 1",
+      [userId]
+    );
+
+    return res.json({ success: true, message: "Academic info updated", data: rows[0] });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+module.exports = { getClearanceStatus, getClearanceHistory, getClearanceModules, getProfile, updateAcademicInfo };
