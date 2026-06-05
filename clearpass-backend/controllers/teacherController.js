@@ -1,4 +1,5 @@
-const db = require("../db");
+const db     = require("../db");
+const logger  = require("../utils/logger");
 const { YEARS, SEMESTERS } = require("../config/constants");
 
 // Auto-mark overdue requests (pending + past deadline)
@@ -15,7 +16,7 @@ const markOverdue = async (department) => {
       params
     );
   } catch (err) {
-    console.error("markOverdue error:", err.message);
+    logger.error("[teacherController] markOverdue failed", { message: err.message, department });
   }
 };
 
@@ -172,7 +173,7 @@ const getRequests = async (req, res, next) => {
       message: "Requests fetched",
     });
   } catch (error) {
-    console.error("getRequests error:", error.message, error.sql || "");
+    logger.error("[teacherController] getRequests failed", { message: error.message, sql: error.sql || null });
     return next(error);
   }
 };
