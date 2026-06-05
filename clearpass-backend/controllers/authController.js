@@ -206,17 +206,57 @@ const updateProfile = async (req, res, next) => {
 
 const getAllUsers = async (req, res, next) => {
   try {
+    const { role, search, page = 1, limit = 50 } = req.query;
+
+    const pageNum  = Math.max(1, parseInt(page, 10));
+    const limitNum = Math.min(200, Math.max(1, parseInt(limit, 10)));
+    const offset   = (pageNum - 1) * limitNum;
+
+    const conditions = [];
+    const params     = [];
+
+    if (role) {
+      const VALID = ["student", "teacher", "admin", "super_admin"];
+      if (!VALID.includes(role)) {
+        return res.status(400).json({ message: "Invalid role filter" });
+      }
+      conditions.push(`role = $${params.length + 1}`);
+      params.push(role);
+    }
+
+    if (search && search.trim()) {
+      const pattern = `%${search.trim()}%`;
+      conditions.push(`(name ILIKE $${params.length + 1} OR email ILIKE $${params.length + 2})`);
+      params.push(pattern, pattern);
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
     const { rows: users } = await db.query(
       `SELECT id, name, email, role, department
        FROM users
+       ${where}
        ORDER BY CASE role
          WHEN 'admin'   THEN 0
          WHEN 'teacher' THEN 1
          WHEN 'student' THEN 2
          ELSE 3
-       END, name ASC`
+       END, name ASC
+       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, limitNum, offset]
     );
-    return res.json({ users });
+
+    const { rows: countRows } = await db.query(
+      `SELECT COUNT(*) AS total FROM users ${where}`,
+      params
+    );
+
+    return res.json({
+      users,
+      total:  parseInt(countRows[0].total, 10),
+      page:   pageNum,
+      limit:  limitNum,
+    });
   } catch (error) {
     return next(error);
   }
