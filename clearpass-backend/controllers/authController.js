@@ -606,6 +606,35 @@ const logout = async (req, res, next) => {
 };
 
 /**
+ * GET /api/auth/users/:id  (admin / super_admin only)
+ * Fetch a single user record by primary key.
+ */
+const getUserById = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.params.id, 10);
+    if (!userId || userId < 1) {
+      return res.status(400).json({ message: "Valid user id is required" });
+    }
+
+    const { rows: users } = await db.query(
+      `SELECT id, name, email, role, department, year, semester
+       FROM users
+       WHERE id = $1
+       LIMIT 1`,
+      [userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.json({ user: users[0] });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/**
  * POST /api/auth/change-password
  * Authenticated user changes their own password.
  * Body: { currentPassword, newPassword }
@@ -649,6 +678,7 @@ module.exports = {
   createUser,
   deleteUser,
   getAllUsers,
+  getUserById,
   getStudents,
   getTeachers,
   getAdmins,

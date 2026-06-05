@@ -3,6 +3,7 @@ const express = require("express");
 const {
   changePassword,
   getAllUsers,
+  getUserById,
   getStudents,
   getTeachers,
   getAdmins,
@@ -30,11 +31,12 @@ router.put("/profile", verifyToken, validate(schemas.updateProfile), updateProfi
 router.post("/change-password", verifyToken, validate(schemas.changePassword), changePassword);
 router.get("/users", verifyToken, authorizeRoles("admin"), getAllUsers);
 
-// ADDED: Admin user management routes
+// Admin user management routes
 router.post("/admin/create-user",      verifyToken, authorizeRoles("admin", "super_admin"), validate(schemas.createUser), createUser);
 router.get("/admin/users/students",    verifyToken, authorizeRoles("admin", "super_admin"), getStudents);
 router.get("/admin/users/teachers",    verifyToken, authorizeRoles("admin", "super_admin"), getTeachers);
 router.get("/admin/users/admins",      verifyToken, authorizeRoles("admin", "super_admin"), getAdmins);
+router.get("/admin/users/:id",         verifyToken, authorizeRoles("admin", "super_admin"), getUserById);
 router.put("/admin/users/:id",         verifyToken, authorizeRoles("admin", "super_admin"), updateUser);
 router.delete("/admin/users/:id",      verifyToken, authorizeRoles("admin", "super_admin"), deleteUser);
 
