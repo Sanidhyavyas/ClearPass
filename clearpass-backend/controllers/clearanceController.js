@@ -397,8 +397,53 @@ const assignTeacher = async (req, res, next) => {
   }
 };
 
+/**
+ * DELETE /api/clearance/my-requests/:id
+ * A student can cancel (delete) their own pending clearance request.
+ * Rejects attempts to cancel requests that have already been approved or rejected.
+ */
+const cancelClearanceRequest = async (req, res, next) => {
+  try {
+    const studentId = req.user.id;
+    const requestId = parseInt(req.params.id, 10);
+
+    if (!requestId || requestId < 1) {
+      return res.status(400).json({ message: "Valid request id is required" });
+    }
+
+    const { rows } = await db.query(
+      "SELECT id, status FROM clearance_requests WHERE id = $1 AND student_id = $2 LIMIT 1",
+      [requestId, studentId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Clearance request not found" });
+    }
+
+    if (rows[0].status !== "pending") {
+      return res.status(409).json({
+        message: `Cannot cancel a request that is already '${rows[0].status}'`,
+      });
+    }
+
+    await db.query("DELETE FROM clearance_requests WHERE id = $1", [requestId]);
+
+    // Audit log entry (non-fatal)
+    await db.query(
+      `INSERT INTO clearance_audit_logs (request_id, action, performed_by, performed_by_role)
+       VALUES ($1, 'cancelled', $2, $3)`,
+      [requestId, studentId, req.user.role]
+    ).catch(() => {});
+
+    return res.json({ message: "Clearance request cancelled successfully" });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   assignTeacher,
+  cancelClearanceRequest,
   createClearanceRequest,
   getAllRequests,
   getAssignedRequests,

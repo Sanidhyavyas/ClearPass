@@ -2,6 +2,7 @@ const express = require("express");
 
 const {
   assignTeacher,
+  cancelClearanceRequest,
   createClearanceRequest,
   getAllRequests,
   getAssignedRequests,
@@ -15,8 +16,9 @@ const { validate, schemas }           = require("../middleware/validate");
 
 const router = express.Router();
 
-router.post("/request-clearance", verifyToken, authorizeRoles("student"), validate(schemas.submitClearanceRequest), createClearanceRequest);
-router.get("/my-requests", verifyToken, authorizeRoles("student"), getStudentRequests);
+router.post("/request-clearance",      verifyToken, authorizeRoles("student"), validate(schemas.submitClearanceRequest), createClearanceRequest);
+router.get("/my-requests",             verifyToken, authorizeRoles("student"), getStudentRequests);
+router.delete("/my-requests/:id",      verifyToken, authorizeRoles("student"), cancelClearanceRequest);
 router.get("/assigned-requests", verifyToken, authorizeRoles("teacher"), getAssignedRequests);
 router.put("/update-status/:id", verifyToken, authorizeRoles("teacher"), updateRequestStatus);
 router.get("/all-requests", verifyToken, authorizeRoles("admin"), getAllRequests);
