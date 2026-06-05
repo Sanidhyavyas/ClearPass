@@ -125,11 +125,54 @@ const getUnreadCount = async (req, res, next) => {
   }
 };
 
+/**
+ * PUT /api/notifications/preferences
+ * Upsert per-user notification preference flags stored in
+ * the notification_preferences table.
+ * Body fields (all optional boolean): emailUpdates, requestApproval,
+ *   requestRejection, weeklyDigest
+ */
+const updatePreferences = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const {
+      emailUpdates     = null,
+      requestApproval  = null,
+      requestRejection = null,
+      weeklyDigest     = null,
+    } = req.body;
+
+    await db.query(
+      `INSERT INTO notification_preferences
+         (user_id, email_updates, request_approval, request_rejection, weekly_digest)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (user_id) DO UPDATE SET
+         email_updates     = COALESCE($2, notification_preferences.email_updates),
+         request_approval  = COALESCE($3, notification_preferences.request_approval),
+         request_rejection = COALESCE($4, notification_preferences.request_rejection),
+         weekly_digest     = COALESCE($5, notification_preferences.weekly_digest),
+         updated_at        = NOW()`,
+      [userId, emailUpdates, requestApproval, requestRejection, weeklyDigest]
+    );
+
+    const { rows } = await db.query(
+      `SELECT email_updates, request_approval, request_rejection, weekly_digest
+       FROM notification_preferences WHERE user_id = $1`,
+      [userId]
+    );
+
+    return res.json({ message: "Preferences updated", preferences: rows[0] || {} });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 module.exports = {
   sendNotification,
   sendNotificationBatch,
   getNotifications,
   getUnreadCount,
+  updatePreferences,
   markAllRead,
   markOneRead,
   deleteNotification,
