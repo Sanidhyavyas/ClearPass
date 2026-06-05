@@ -1,6 +1,7 @@
 const express = require("express");
 const { authorizeRoles, verifyToken } = require("../middleware/authMiddleware");
 const { validateSemesterParams } = require("../middleware/semesterMiddleware");
+const { validate, schemas }       = require("../middleware/validate");
 const {
   getRequests,
   getRequestById,
@@ -19,9 +20,9 @@ router.use(verifyToken, authorizeRoles("teacher", "admin", "super_admin"));
 
 router.get("/requests",              validateSemesterParams, getRequests);
 router.get("/requests/:id",          getRequestById);
-router.post("/approve/:id",          approveRequest);
-router.post("/reject/:id",           rejectRequest);
-router.post("/request-changes/:id",  requestChanges);
+router.post("/approve/:id",          validate(schemas.approveRequest),   approveRequest);
+router.post("/reject/:id",           validate(schemas.rejectRequest),    rejectRequest);
+router.post("/request-changes/:id",  validate(schemas.requestChanges),   requestChanges);
 router.get("/stats",                 getStats);
 
 // Semester assignment management

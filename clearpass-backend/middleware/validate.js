@@ -107,6 +107,19 @@ const schemas = {
     requestRejection:  Joi.boolean().optional(),
     weeklyDigest:      Joi.boolean().optional(),
   }),
+
+  // Teacher action schemas
+  approveRequest: Joi.object({
+    remarks: Joi.string().trim().max(500).optional().allow("", null),
+  }),
+
+  rejectRequest: Joi.object({
+    rejection_reason: Joi.string().trim().min(5).max(500).required(),
+  }),
+
+  requestChanges: Joi.object({
+    remarks: Joi.string().trim().min(5).max(500).required(),
+  }),
 };
 
 module.exports = { validate, schemas };
