@@ -31,8 +31,13 @@ export function AuthProvider({ children }) {
     });
   };
 
+  const isAdmin = () => auth?.user?.role === "admin";
+  const isStudent = () => auth?.user?.role === "student";
+  const isTeacher = () => auth?.user?.role === "teacher";
+  const isSuperAdmin = () => auth?.user?.role === "super_admin";
+
   return (
-    <AuthContext.Provider value={{ auth, user: auth?.user || null, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ auth, user: auth?.user || null, login, logout, updateUser, isAdmin, isStudent, isTeacher, isSuperAdmin }}>
       {children}
     </AuthContext.Provider>
   );
