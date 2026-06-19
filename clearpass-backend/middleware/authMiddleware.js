@@ -79,7 +79,7 @@ const verifyToken = async (req, res, next) => {
     req.user = users[0];
     return next();
   } catch (error) {
-    console.error("[authMiddleware] DB error during token verification:", error.message);
+    logger.error("[authMiddleware] DB error during token verification", { message: error.message });
     return next(error);
   }
 };
