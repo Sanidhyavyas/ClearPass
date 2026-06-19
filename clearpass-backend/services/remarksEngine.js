@@ -11,6 +11,7 @@
  */
 
 const db = require("../db");
+const logger = require("../utils/logger");
 
 // ── Remark templates (configurable) ──────────────────────────────────────────
 const REMARKS = {
@@ -152,7 +153,7 @@ async function generateClearanceSummary(studentId) {
 
     return { remark, modules, progress, engineResult, request };
   } catch (err) {
-    console.error("[remarksEngine] Error generating summary:", err.message);
+    logger.error("[remarksEngine] Error generating summary", { message: err.message });
     return { remark: "Summary unavailable.", modules: [], progress: 0, engineResult: null };
   }
 }

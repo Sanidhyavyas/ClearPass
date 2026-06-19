@@ -141,7 +141,7 @@ const getRequests = async (req, res, next) => {
       requests = rows;
     } catch (colErr) {
       // Fallback: use only original columns
-      console.warn("Extended columns missing, using base query:", colErr.message);
+      logger.warn("Extended columns missing, using base query", { message: colErr.message });
       const limitN  = params.length + 1;
       const offsetN = params.length + 2;
       const { rows } = await db.query(
