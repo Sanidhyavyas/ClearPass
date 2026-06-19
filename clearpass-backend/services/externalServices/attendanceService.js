@@ -22,8 +22,24 @@ async function getStudentAttendance(studentId) {
     return callExternalAttendanceApi(studentId);
   }
 
-  // ── Option B: Mock — returns 100% until real API is wired ─────────────
-  // Replace with a real DB query if you store attendance locally.
+  // ── Option B: Internal DB query (when storing attendance locally) ────
+  if (process.env.USE_MOCK_ATTENDANCE !== "true") {
+    const { rows } = await db.query(
+      "SELECT attendance_percentage FROM students WHERE user_id = $1 LIMIT 1",
+      [studentId]
+    );
+    if (rows.length) {
+      return {
+        percentage:     Number(rows[0].attendance_percentage || 100),
+        totalClasses:   0,
+        presentClasses: 0,
+        source:         "internal_db",
+        details:        `Attendance fetched from internal DB: ${rows[0].attendance_percentage || 100}%`,
+      };
+    }
+  }
+
+  // ── Option C: Mock — returns 100% until real API is wired ────────────
   return {
     percentage:     100,
     totalClasses:   0,

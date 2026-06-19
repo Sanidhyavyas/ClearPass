@@ -22,8 +22,24 @@ async function getStudentDues(studentId) {
     return callExternalLibraryApi(studentId);
   }
 
-  // ── Option B: Mock — always clean (no dues) until real API is wired ──
-  // Replace this block with real DB queries if you track library dues internally.
+  // ── Option B: Internal DB query (when tracking dues locally) ─────────
+  if (process.env.USE_MOCK_LIBRARY !== "true") {
+    const { rows } = await db.query(
+      "SELECT has_library_dues FROM students WHERE user_id = $1 LIMIT 1",
+      [studentId]
+    );
+    if (rows.length) {
+      return {
+        hasDues:      Boolean(rows[0].has_library_dues),
+        overdueBooks: 0,
+        fineAmount:   0,
+        source:       "internal_db",
+        details:      rows[0].has_library_dues ? "Student has library dues" : "No library dues",
+      };
+    }
+  }
+
+  // ── Option C: Mock — always clean (no dues) until real API is wired ──
   return {
     hasDues:      false,
     overdueBooks: 0,
