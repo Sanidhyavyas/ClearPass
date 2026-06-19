@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require("../utils/logger");
 
 /**
  * Silently inserts an audit log row. Errors are caught so a failed
@@ -21,7 +22,7 @@ const createAuditLog = async ({
       [userId, userName, userRole, action, targetType, targetId, details]
     );
   } catch (err) {
-    console.error("Audit log write failed:", err.message);
+    logger.error("Audit log write failed", { message: err.message });
   }
 };
 

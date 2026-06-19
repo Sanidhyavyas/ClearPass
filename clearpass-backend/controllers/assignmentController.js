@@ -1,7 +1,8 @@
 // assignmentController.js — Teacher/Student assignment system
-const db   = require("../db");
-const path = require("path");
-const fs   = require("fs");
+const db     = require("../db");
+const path   = require("path");
+const fs     = require("fs");
+const logger = require("../utils/logger");
 
 // ── Helper: insert a notification row ────────────────────────────────────
 async function notifyUser({ userId, type, title, message, relatedId }) {
@@ -12,7 +13,7 @@ async function notifyUser({ userId, type, title, message, relatedId }) {
       [userId, type, title, message || null, relatedId || null]
     );
   } catch (err) {
-    console.error("[notify] Failed:", err.message);
+    logger.error("[notify] Failed", { message: err.message });
   }
 }
 
