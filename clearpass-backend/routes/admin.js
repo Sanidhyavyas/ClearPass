@@ -2,10 +2,10 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 const logger = require("../utils/logger");
+const { verifyToken, authorizeRoles } = require("../middleware/authMiddleware");
 
-router.get("/overview", async (req, res) => {
+router.get("/overview", verifyToken, authorizeRoles("admin", "super_admin"), async (req, res, next) => {
   try {
-    // FIXED: removed clearance_status from users query (column doesn't exist)
     const { rows: [counts] } = await db.query(`
       SELECT
         COUNT(*) AS totalUsers,
@@ -25,14 +25,12 @@ router.get("/overview", async (req, res) => {
 
     res.json({ ...counts, ...reqCounts });
   } catch (error) {
-    logger.error("[admin] /overview error", { message: error.message });
-    res.status(500).json({ message: "Server error" });
+    return next(error);
   }
 });
 
-router.get("/students", async (req, res) => {
+router.get("/students", verifyToken, authorizeRoles("admin", "super_admin"), async (req, res, next) => {
   try {
-    // FIXED: removed clearance_status; join students table for student_code
     const { rows: students } = await db.query(`
       SELECT u.id, u.name, u.email, u.department,
              s.student_code, s.tgc
@@ -44,8 +42,7 @@ router.get("/students", async (req, res) => {
 
     res.json(students);
   } catch (error) {
-    logger.error("[admin] /students error", { message: error.message });
-    res.status(500).json({ message: "Server error" });
+    return next(error);
   }
 });
 
