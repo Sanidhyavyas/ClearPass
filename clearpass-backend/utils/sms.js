@@ -15,6 +15,7 @@
 "use strict";
 
 const https = require("https");
+const logger = require("./logger");
 
 /**
  * Low-level SMS sender via Twilio REST API.
@@ -58,12 +59,12 @@ function sendSMS({ to, body }) {
         res.on("data", () => {});
         res.on("end", resolve);
         if (res.statusCode >= 400) {
-          console.error("[sms] Twilio returned HTTP", res.statusCode, "for", toE164);
+          logger.error("[sms] Twilio returned non-200", { statusCode: res.statusCode, to: toE164 });
         }
       }
     );
     req.on("error", (err) => {
-      console.error("[sms] Failed to send SMS to", toE164, ":", err.message);
+      logger.error("[sms] Failed to send SMS", { to: toE164, message: err.message });
       resolve(); // non-fatal
     });
     req.write(postData);

@@ -3,6 +3,7 @@
  * Configure via .env: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, CLIENT_URL
  */
 const nodemailer = require("nodemailer");
+const logger = require("./logger");
 
 const createTransport = () =>
   nodemailer.createTransport({
@@ -84,14 +85,14 @@ function emailTemplate({ title, preheader, bodyHtml, ctaLabel, ctaUrl }) {
  */
 const sendMail = async ({ to, subject, html, attachments = [] }) => {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn("[mailer] SMTP not configured — email skipped.");
+    logger.warn("[mailer] SMTP not configured — email skipped.");
     return;
   }
   try {
     const transporter = createTransport();
     await transporter.sendMail({ from: FROM(), to, subject, html, attachments });
   } catch (err) {
-    console.error("[mailer] Failed to send email to", to, ":", err.message);
+    logger.error("[mailer] Failed to send email", { to, message: err.message });
   }
 };
 
