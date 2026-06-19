@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require("../utils/logger");
 const { createAuditLog } = require("./auditController");
 const { sendNotification } = require("./notificationController");
 const {
@@ -50,7 +51,7 @@ const createClearanceRequest = async (req, res, next) => {
       `INSERT INTO clearance_audit_logs (request_id, action, performed_by, performed_by_role)
        VALUES ($1, 'submitted', $2, $3)`,
       [newId, studentId, req.user.role]
-    ).catch(() => {}); // non-fatal
+    ).catch((err) => logger.warn("[clearance] Audit log insert failed", { requestId: newId, message: err.message }));
 
     const { rows: requests } = await db.query(
       `SELECT cr.id, cr.student_id, cr.teacher_id, cr.status, cr.remarks,
@@ -71,9 +72,9 @@ const createClearanceRequest = async (req, res, next) => {
       type:    "info",
       title:   "Clearance Request Submitted",
       message: "Your clearance request has been submitted and is pending review.",
-    }).catch(() => {});
-    sendClearanceSubmitted(student).catch(() => {});
-    sendClearanceSubmittedSMS(student).catch(() => {});
+    }).catch((err) => logger.warn("[clearance] Notification failed", { userId: studentId, message: err.message }));
+    sendClearanceSubmitted(student).catch((err) => logger.warn("[clearance] Email notification failed", { userId: studentId, message: err.message }));
+    sendClearanceSubmittedSMS(student).catch((err) => logger.warn("[clearance] SMS notification failed", { userId: studentId, message: err.message }));
     return;
   } catch (error) {
     return next(error);
@@ -189,9 +190,9 @@ const updateRequestStatus = async (req, res, next) => {
         type:    status === "approved" ? "success" : "error",
         title:   `Clearance Request ${status === "approved" ? "Approved" : "Rejected"}`,
         message: `Your clearance request #${requestId} has been ${status}.${remarks ? ` Remarks: ${remarks.trim()}` : ""}`,
-      }).catch(() => {});
-      sendModuleStatusUpdate(student, request.department, status, remarks).catch(() => {});
-      sendStatusUpdateSMS(student, status).catch(() => {});
+      }).catch((err) => logger.warn("[clearance] Status notification failed", { requestId, message: err.message }));
+      sendModuleStatusUpdate(student, request.department, status, remarks).catch((err) => logger.warn("[clearance] Status email failed", { requestId, message: err.message }));
+      sendStatusUpdateSMS(student, status).catch((err) => logger.warn("[clearance] Status SMS failed", { requestId, message: err.message }));
     }
     return;
   } catch (error) {
@@ -294,9 +295,9 @@ const updateFeeStatus = async (req, res, next) => {
         type:    status === "approved" ? "success" : "warning",
         title:   `Fee Payment ${status === "approved" ? "Verified" : "Rejected"}`,
         message: `Your fee payment has been ${status} by admin.${remarks ? ` Remarks: ${remarks.trim()}` : ""}`,
-      }).catch(() => {});
-      sendFeeStatusUpdate(student, status, remarks).catch(() => {});
-      sendFeeStatusSMS(student, status).catch(() => {});
+      }).catch((err) => logger.warn("[clearance] Fee notification failed", { requestId, message: err.message }));
+      sendFeeStatusUpdate(student, status, remarks).catch((err) => logger.warn("[clearance] Fee email failed", { requestId, message: err.message }));
+      sendFeeStatusSMS(student, status).catch((err) => logger.warn("[clearance] Fee SMS failed", { requestId, message: err.message }));
     }
     return;
   } catch (error) {
@@ -378,18 +379,18 @@ const assignTeacher = async (req, res, next) => {
         type:    "info",
         title:   "Reviewer Assigned",
         message: `A reviewer (${teacher.name || "an admin"}) has been assigned to your clearance request.`,
-      }).catch(() => {});
+      }).catch((err) => logger.warn("[clearance] Assign notification failed", { requestId, message: err.message }));
       if (teacher.id) {
         sendNotification({
           userId:  teacher.id,
           type:    "info",
           title:   "New Clearance Request Assigned",
           message: `Request #${requestId} from ${student.name} has been assigned to you for review.`,
-        }).catch(() => {});
+        }).catch((err) => logger.warn("[clearance] Teacher notification failed", { requestId, teacherId: teacher.id, message: err.message }));
       }
-      sendTeacherAssigned(student, teacher.name || "a reviewer").catch(() => {});
-      if (teacher.email) sendTeacherNewRequest(teacher, student.name, requestId).catch(() => {});
-      sendTeacherAssignedSMS(student, teacher.name || "a reviewer").catch(() => {});
+      sendTeacherAssigned(student, teacher.name || "a reviewer").catch((err) => logger.warn("[clearance] Teacher assigned email failed", { requestId, message: err.message }));
+      if (teacher.email) sendTeacherNewRequest(teacher, student.name, requestId).catch((err) => logger.warn("[clearance] Teacher new request email failed", { requestId, message: err.message }));
+      sendTeacherAssignedSMS(student, teacher.name || "a reviewer").catch((err) => logger.warn("[clearance] Teacher assigned SMS failed", { requestId, message: err.message }));
     }
     return;
   } catch (error) {
@@ -433,7 +434,7 @@ const cancelClearanceRequest = async (req, res, next) => {
       `INSERT INTO clearance_audit_logs (request_id, action, performed_by, performed_by_role)
        VALUES ($1, 'cancelled', $2, $3)`,
       [requestId, studentId, req.user.role]
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[clearance] Cancel audit log failed", { requestId, message: err.message }));
 
     return res.json({ message: "Clearance request cancelled successfully" });
   } catch (error) {
