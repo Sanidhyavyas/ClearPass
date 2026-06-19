@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const db = require("../db");
+const logger = require("../utils/logger");
 const { createAuditLog } = require("./auditController");
 const { autoApproveModulesAndIssueCert } = require("./certificateController");
 
@@ -236,7 +237,7 @@ const approveStudentClearance = async (req, res, next) => {
       },
       performedById: req.user.id,
     }).catch((err) => {
-      console.error("[approveStudentClearance] Certificate generation failed:", err.message);
+      logger.error("[approveStudentClearance] Certificate generation failed", { message: err.message });
     });
 
     return res.json({ message: "Student clearance approved", certificate_ready: true });
@@ -313,7 +314,7 @@ const superAdminApproveClearance = async (req, res, next) => {
         student,
         performedById: req.user.id,
       }).catch((err) => {
-        console.error("[superAdminApproveClearance] Certificate generation failed:", err.message);
+        logger.error("[superAdminApproveClearance] Certificate generation failed", { message: err.message });
       });
     } else {
       await db.query(

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const logger = require("../utils/logger");
 
 router.get("/overview", async (req, res) => {
   try {
@@ -24,7 +25,7 @@ router.get("/overview", async (req, res) => {
 
     res.json({ ...counts, ...reqCounts });
   } catch (error) {
-    console.error(error);
+    logger.error("[admin] /overview error", { message: error.message });
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -43,7 +44,7 @@ router.get("/students", async (req, res) => {
 
     res.json(students);
   } catch (error) {
-    console.error(error);
+    logger.error("[admin] /students error", { message: error.message });
     res.status(500).json({ message: "Server error" });
   }
 });
