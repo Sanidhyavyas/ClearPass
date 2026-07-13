@@ -22,7 +22,7 @@ router.post(
   createChecklistItem
 );
 
-router.get("/subject/:subjectId", getChecklistForSubject);
+router.get("/subject/:subjectId", authorizeRoles("teacher", "admin", "super_admin"), getChecklistForSubject);
 
 router.put(
   "/:itemId",
