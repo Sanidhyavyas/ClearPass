@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { clearAuth, getToken } from "../utils/auth";
+import { clearAuth, getToken, isTokenExpired } from "../utils/auth";
 import logger, { correlationId } from "../utils/logger";
 
 const PUBLIC_AUTH_PATH_SUFFIXES = [
@@ -38,7 +38,14 @@ API.interceptors.request.use((config) => {
     delete config.headers.Authorization;
   } else {
     const token = getToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      if (isTokenExpired()) {
+        clearAuth();
+        window.location.href = "/login";
+        return Promise.reject(new Error("Token expired"));
+      }
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
 
   // Attach correlation ID so backend logs can be tied to this frontend session

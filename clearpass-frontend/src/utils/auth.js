@@ -1,3 +1,5 @@
+import { jwtDecode } from "jwt-decode";
+
 const AUTH_STORAGE_KEY = "clearpass_auth";
 
 export function saveAuth(payload) {
@@ -45,6 +47,17 @@ export function clearAuth() {
 
 export function getToken() {
   return getAuth()?.token || "";
+}
+
+export function isTokenExpired() {
+  const token = getToken();
+  if (!token) return true;
+  try {
+    const decoded = jwtDecode(token);
+    return decoded.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
 }
 
 export function isAuthenticated() {
