@@ -15,8 +15,8 @@ const router = express.Router();
 router.use(verifyToken);
 
 // NOTE: specific paths before parameterized paths
-router.get("/semester/:sem", listTGCSubjects); // kept for query-param style too
-router.get("/", listTGCSubjects);
+router.get("/semester/:sem", authorizeRoles("student", "teacher", "admin", "super_admin"), listTGCSubjects);
+router.get("/", authorizeRoles("student", "teacher", "admin", "super_admin"), listTGCSubjects);
 
 router.post(
   "/create",
