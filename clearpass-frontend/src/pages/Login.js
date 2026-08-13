@@ -43,18 +43,11 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Client-side validation before hitting the network
-    const trimmedEmail = form.email.trim();
-    if (!trimmedEmail) { setError("Email address is required."); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) { setError("Please enter a valid email address."); return; }
-    if (!form.password) { setError("Password is required."); return; }
-
     try {
       setLoading(true);
       setError("");
       clearAuth();
-      const res = await API.post("/login", { email: trimmedEmail, password: form.password });
+      const res = await API.post("/login", { email: form.email.trim(), password: form.password });
       saveAuth(res.data);
       navigate(getDefaultRoute(res.data.user?.role || res.data.role));
     } catch (err) {
