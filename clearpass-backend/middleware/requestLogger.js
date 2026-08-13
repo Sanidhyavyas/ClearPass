@@ -44,7 +44,7 @@ function requestLogger(req, res, next) {
   // ── 2. Extract userId from JWT payload (already decoded by authMiddleware) ──
   // authMiddleware sets req.user; this middleware may run before it, so we
   // do a safe read and update the log when available.
-  const getUserId = () => req.user?.id || req.user?.email || null;
+  const getUserId = () => req.user?.id || req.user?.email || null;  
 
   // ── 3. Log incoming request ────────────────────────────────────────
   const startTime    = Date.now();

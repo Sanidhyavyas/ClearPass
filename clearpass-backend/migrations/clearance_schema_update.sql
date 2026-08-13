@@ -1,13 +1,7 @@
--- ================================================================
--- ClearPass DB Migration: clearance_schema_update.sql
--- Compatible with MySQL 5.7+ and all MySQL 8.x versions
--- ================================================================
 
 USE clearpass;
 
--- ── Helper procedure: add column only if it doesn't exist ────────
--- CONTINUE HANDLER means a failed ADD COLUMN (e.g. unsupported type,
--- duplicate) is silently skipped so the rest of the migration continues.
+
 DROP PROCEDURE IF EXISTS _add_col;
 DELIMITER $$
 CREATE PROCEDURE _add_col(
@@ -16,7 +10,7 @@ CREATE PROCEDURE _add_col(
   IN p_def   TEXT
 )
 BEGIN
-  DECLARE CONTINUE HANDLER FOR SQLEXCEPTION BEGIN END;  -- skip on any error
+  DECLARE CONTINUE HANDLER FOR SQLEXCEPTION BEGIN END; 
   IF NOT EXISTS (
     SELECT 1
     FROM INFORMATION_SCHEMA.COLUMNS
