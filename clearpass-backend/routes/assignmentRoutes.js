@@ -1,7 +1,7 @@
 // assignmentRoutes.js
 const router = require("express").Router();
 const { verifyToken, authorizeRoles } = require("../middleware/authMiddleware");
-const upload = require("../middleware/upload");
+const { upload } = require("../middleware/upload");
 const {
   createAssignment,
   getTeacherAssignments,
