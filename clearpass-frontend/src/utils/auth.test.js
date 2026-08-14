@@ -3,6 +3,7 @@ import {
   getAuth,
   clearAuth,
   getToken,
+  isTokenExpired,
   isAuthenticated,
   getRole,
   isStudent,
@@ -66,6 +67,34 @@ describe('getToken', () => {
 
   it('returns an empty string when not authenticated', () => {
     expect(getToken()).toBe('');
+  });
+});
+
+const b64url = (obj) =>
+  btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+const makeToken = (payload) => `${b64url({ alg: 'HS256', typ: 'JWT' })}.${b64url(payload)}.fake-signature`;
+
+describe('isTokenExpired', () => {
+  it('returns true when no token is stored', () => {
+    expect(isTokenExpired()).toBe(true);
+  });
+
+  it('returns false for a token with a future expiry', () => {
+    const future = Math.floor(Date.now() / 1000) + 3600;
+    saveAuth({ ...mockAuth, token: makeToken({ exp: future }) });
+    expect(isTokenExpired()).toBe(false);
+  });
+
+  it('returns true for a token with a past expiry', () => {
+    const past = Math.floor(Date.now() / 1000) - 3600;
+    saveAuth({ ...mockAuth, token: makeToken({ exp: past }) });
+    expect(isTokenExpired()).toBe(true);
+  });
+
+  it('returns true for a token that cannot be decoded', () => {
+    saveAuth({ ...mockAuth, token: 'not-a-valid-jwt' });
+    expect(isTokenExpired()).toBe(true);
   });
 });
 
