@@ -4,23 +4,20 @@ This roadmap is based on a quick technical review of your current backend + fron
 
 ## 1) Fix the highest-risk issues first (this week)
 
-1. **Protect sensitive backend routes with JWT auth + role checks**
-   - Right now, routes that expose or update clearance data are publicly accessible (e.g., teacher update endpoints and student dashboards).
-   - Add middleware for:
-     - token verification,
-     - role-based access (`student`, `teacher`, `admin`),
-     - ownership checks (students can only read their own dashboard).
+1. **Protect sensitive backend routes with JWT auth + role checks** *(done)*
+   - Every route file now applies `verifyToken` (and `authorizeRoles` where roles matter) via `middleware/authMiddleware.js`.
+   - Ownership checks still worth a review: confirm students can only read their own dashboard data.
 
-2. **Harden client token handling**
-   - `StudentDashboard` decodes JWT directly with `token.split(...)` and no guard path. Add safe checks for missing/invalid tokens and redirect to login.
+2. **Harden client token handling** *(done)*
+   - `api.js` interceptor now checks `isTokenExpired()` (via `jwt-decode`) before every request and redirects to `/login` on expiry.
+   - No raw `token.split(...)` decoding remains in the frontend.
 
-3. **Resolve status vocabulary drift**
-   - You currently use both lowercase (`approved`) and Title Case (`Approved`) depending on feature path.
-   - Standardize status values across DB + API + UI (`pending|approved|rejected`) and map to display labels in one place.
+3. **Resolve status vocabulary drift** *(no change needed)*
+   - Verified: DB, API, and shared constants (`backend/config/constants.js` + `frontend/src/utils/academicConfig.js` `CLEARANCE_STATUS`) all use `pending|approved|rejected`.
+   - Recharts components in `ChartCard.js` use Title Case only as Bar `dataKey` display labels, not as stored values.
 
-4. **Unify API access layer in frontend**
-   - Most pages use `API` service with interceptors, but `TeacherDashboard` uses raw `axios` + hardcoded URL.
-   - Move teacher calls into `src/services/api.js` helpers to avoid inconsistent auth headers and base URLs.
+4. **Unify API access layer in frontend** *(done — no change needed)*
+   - `TeacherDashboard` already uses the shared `API` service (interceptors + baseURL); no raw `axios` calls found.
 
 ## 2) Make the codebase maintainable (next 1–2 weeks)
 
@@ -35,9 +32,8 @@ This roadmap is based on a quick technical review of your current backend + fron
 3. **Implement centralized error handling**
    - Use one Express error middleware instead of ad-hoc `try/catch` + repeated `res.status(500)` logic.
 
-4. **Clean dependency set**
-   - You have both `bcrypt` and `bcryptjs` in backend deps but only use `bcryptjs`.
-   - Root package contains `pg`, while backend uses MySQL (`mysql2`); remove unused packages to reduce confusion.
+4. **Clean dependency set** *(done)*
+   - `bcrypt` removed (only `bcryptjs` is used); `mysql2` removed from runtime deps (backend is PostgreSQL via `pg`); root `package.json` entries for `pg`/`twilio` removed.
 
 ## 3) Improve product completeness (next sprint)
 
