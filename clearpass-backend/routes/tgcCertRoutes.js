@@ -55,7 +55,11 @@ router.post(
   approveStudentSubject
 );
 
-// PDF download — students get own, admin gets any
-router.get("/:studentId/download", generateTGCPDF);
+// PDF download — owner student, admin/super_admin, or assigned teacher only
+router.get(
+  "/:studentId/download",
+  authorizeRoles("student", "teacher", "admin", "super_admin"),
+  generateTGCPDF
+);
 
 module.exports = router;

@@ -15,6 +15,7 @@ const fs   = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
 const db   = require("../db");
+const { createAuditLog } = require("./auditController");
 const { sendNotification } = require("./notificationController");
 const { sendTGCSubjectUpdate } = require("../utils/mailer");
 const { sendTGCSubjectSMS } = require("../utils/sms");
@@ -791,9 +792,8 @@ const generateTGCPDF = async (req, res, next) => {
   try {
     const studentId = parseInt(req.params.studentId, 10);
 
-    // Students can only download their own
-    if (req.user.role === "student" && req.user.id !== studentId) {
-      return res.status(403).json({ message: "Forbidden" });
+    if (!Number.isInteger(studentId)) {
+      return res.status(400).json({ message: "Invalid student id" });
     }
 
     const { rows: certs } = await db.query(
@@ -803,6 +803,48 @@ const generateTGCPDF = async (req, res, next) => {
     if (certs.length === 0) return res.status(404).json({ message: "No certificate request found" });
 
     const cert = certs[0];
+
+    // Allowed: owning student, admin, super admin, or a teacher explicitly
+    // assigned to at least one subject on this certificate.
+    const isOwner = req.user.role === "student" && req.user.id === studentId;
+    const isAdmin = req.user.role === "admin" || req.user.role === "super_admin";
+
+    let isAssignedTeacher = false;
+    if (req.user.role === "teacher") {
+      const { rows: assignments } = await db.query(
+        `SELECT 1
+         FROM subject_approvals sa
+         JOIN subject_teacher_assignments sta ON sta.subject_id = sa.subject_id
+         WHERE sa.certificate_id = $1 AND sta.teacher_id = $2
+         LIMIT 1`,
+        [cert.id, req.user.id]
+      );
+      isAssignedTeacher = assignments.length > 0;
+    }
+
+    if (!isOwner && !isAdmin && !isAssignedTeacher) {
+      await createAuditLog({
+        userId:     req.user.id,
+        userName:   req.user.name,
+        userRole:   req.user.role,
+        action:     "tgc_download_denied",
+        targetType: "term_grant_certificate",
+        targetId:   cert.id,
+        details:    `TGC download denied for student ${studentId} (role: ${req.user.role})`,
+      });
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    await createAuditLog({
+      userId:     req.user.id,
+      userName:   req.user.name,
+      userRole:   req.user.role,
+      action:     "tgc_downloaded",
+      targetType: "term_grant_certificate",
+      targetId:   cert.id,
+      details:    `TGC downloaded for student ${studentId} by ${req.user.role}`,
+    });
+
     if (cert.overall_status !== "approved") {
       return res.status(400).json({
         message: "Certificate not fully approved yet",
