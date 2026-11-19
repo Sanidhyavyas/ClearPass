@@ -3,6 +3,8 @@ require("dotenv").config();
 const cors = require("cors");
 const express = require("express");
 
+const { corsOptions } = require("./config/cors");
+
 // ── Logging ──────────────────────────────────────────────────────────────
 const logger        = require("./utils/logger");
 const requestLogger = require("./middleware/requestLogger");
@@ -32,12 +34,9 @@ const { authLimiter, apiLimiter } = require("./middleware/rateLimiter");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || true,
-    credentials: true
-  })
-);
+// CORS must run before any API route so preflight requests never reach the
+// rate limiters or controllers. See config/cors.js for the origin allowlist.
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // ── Rate limiting ────────────────────────────────────────────────────────
