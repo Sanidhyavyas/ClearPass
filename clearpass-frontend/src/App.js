@@ -16,6 +16,7 @@ import ProfilePage from "./pages/Profile";
 import SettingsPage from "./pages/Settings";
 import SubjectListPage from "./pages/SubjectListPage";
 import AcademicStructurePage from "./pages/AcademicStructurePage";
+import VerifyCertificate from "./pages/VerifyCertificate";
 
 function App() {
   return (
@@ -91,6 +92,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/verify/:token" element={<VerifyCertificate />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
