@@ -329,9 +329,13 @@ const getCertificate = async (req, res, next) => {
     const userId    = req.user.id;
     const userRole  = req.user.role;
 
-    // Students may only fetch their own certificate
+    // Fetch the certificate together with the request's assigned teacher.
     const { rows } = await db.query(
-      "SELECT * FROM qr_tokens WHERE request_id = $1 LIMIT 1",
+      `SELECT qt.*, cr.teacher_id AS assigned_teacher_id
+       FROM qr_tokens qt
+       LEFT JOIN clearance_requests cr ON cr.id = qt.request_id
+       WHERE qt.request_id = $1
+       LIMIT 1`,
       [requestId]
     );
 
@@ -341,7 +345,22 @@ const getCertificate = async (req, res, next) => {
 
     const record = rows[0];
 
-    if (userRole === "student" && record.student_id !== userId) {
+    // Allowed: owning student, admin, super admin, or the teacher explicitly
+    // assigned to this clearance request.
+    const isOwner           = userRole === "student" && record.student_id === userId;
+    const isAdmin           = userRole === "admin" || userRole === "super_admin";
+    const isAssignedTeacher = userRole === "teacher" && record.assigned_teacher_id === userId;
+
+    if (!isOwner && !isAdmin && !isAssignedTeacher) {
+      await createAuditLog({
+        userId,
+        userName:   req.user.name,
+        userRole,
+        action:     "certificate_download_denied",
+        targetType: "clearance_request",
+        targetId:   requestId,
+        details:    `Certificate download denied for request #${requestId} (role: ${userRole})`,
+      });
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -349,6 +368,16 @@ const getCertificate = async (req, res, next) => {
     if (!certPath || !fs.existsSync(certPath)) {
       return res.status(404).json({ message: "Certificate file not found" });
     }
+
+    await createAuditLog({
+      userId,
+      userName:   req.user.name,
+      userRole,
+      action:     "certificate_downloaded",
+      targetType: "clearance_request",
+      targetId:   requestId,
+      details:    `Certificate downloaded for request #${requestId} by ${userRole}`,
+    });
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="clearance_${requestId}.pdf"`);
